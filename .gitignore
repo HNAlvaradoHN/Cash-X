@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+.env.*
+*.local
+*.log
+*.keystore
+*.jks
+*.pem
+*.p12
+*.key
+secrets/
+android/app/release/
