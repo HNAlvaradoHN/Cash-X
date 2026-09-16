@@ -17,8 +17,10 @@
 - PR #20 `test(android): validate WebView IndexedDB persistence`: integrado.
 - PR #21 `docs(state): record Android WebView persistence validation`: integrado.
 - PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado.
+- PR #25 `chore(ci): make dependency installation reproducible`: integrado.
 - Issue #19 `Checkpoint 3 spike: validate IndexedDB persistence in Android WebView`: cerrado como completado.
 - Issue #22 `Checkpoint 3 spike: validate attachment Blob storage and cleanup`: cerrado como completado por PR #23.
+- Issue #24 `Checkpoint 3: make dependency installation reproducible`: cerrado como completado por PR #25.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
@@ -66,9 +68,14 @@ PR #23 añadió el contrato `AttachmentStore` y el adaptador `DexieAttachmentSto
 
 Esto es evidencia suficiente para mantener `Blob` en IndexedDB como primer adaptador de v0.1. **No fija todavía un tamaño máximo de producto ni sustituye pruebas de cuota/memoria en dispositivos físicos.** Si evidencia posterior lo exige, `AttachmentStore` permite mover binarios a OPFS o filesystem nativo sin tocar el dominio financiero.
 
+### Reproducibilidad de dependencias
+
+**Completada para el entorno actual.**
+
+PR #25 versionó `package-lock.json` generado con Node 22.12.0 y cambió los jobs normales de CI a `npm ci`. El lockfile fija también el árbol transitivo, por lo que la misma revisión ya no depende de resolver versiones compatibles diferentes en cada ejecución.
+
 ## Pendiente de Checkpoint 3
 
-- generar y versionar `package-lock.json` y usar instalación reproducible en CI;
 - definir el formato externo de backup que transporte comprobantes binarios sin asumir que un `Blob` se serializa correctamente a JSON;
 - validar backup/restauración entre instalaciones de prueba;
 - probar recuperación ante fallos más agresivos y límites/cuotas reales en dispositivo;
@@ -78,12 +85,12 @@ Esto es evidencia suficiente para mantener `Blob` en IndexedDB como primer adapt
 
 ## CI
 
-Cash-X tiene CI propio. `main` valida typecheck, tests, build web, generación/build Android debug y persistencia real de Dexie/IndexedDB —incluidos comprobantes `Blob`— tras cierre forzado y reapertura en un emulador Android API 35.
+Cash-X tiene CI propio. `main` instala dependencias con `npm ci` y valida typecheck, tests, build web, generación/build Android debug y persistencia real de Dexie/IndexedDB —incluidos comprobantes `Blob`— tras cierre forzado y reapertura en un emulador Android API 35.
 
 ## Trabajo paralelo
 
-No hay trabajo paralelo identificado después de integrar PR #23.
+No hay trabajo paralelo identificado después de integrar PR #25.
 
 ## Siguiente paso exacto
 
-**Cerrar reproducibilidad de instalación: generar `package-lock.json`, cambiar CI a `npm ci` y demostrar que web, tests y Android siguen verdes con dependencias bloqueadas. Después validar el formato de backup entre instalaciones y continuar con Google Drive. No construir dashboard todavía.**
+**Definir y validar un formato externo versionado de backup que preserve datos estructurados y bytes de comprobantes; restaurarlo en una segunda instalación de prueba y comprobar integridad/idempotencia. Después continuar con Google Drive. No construir dashboard todavía.**
