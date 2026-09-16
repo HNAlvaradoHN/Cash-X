@@ -9,7 +9,7 @@
 - Visibilidad: pública.
 - Rama principal: `main`.
 - Rama de trabajo actual: `docs/functional-contract-v01`.
-- PR activo: pendiente de abrir al cerrar este checkpoint documental.
+- PR activo: #3 `docs(product): define Cash-X v0.1 functional contract`.
 - PR #1 `chore(project): bootstrap Cash-X repository`: integrado.
 - PR #2 `docs(project): close bootstrap checkpoint`: integrado.
 
@@ -44,7 +44,7 @@ Resultado verificado:
 
 ## Checkpoint 2 — Contrato funcional mínimo
 
-**Estado: completado, pendiente únicamente de integrar el PR documental.**
+**Estado: completado, pendiente únicamente de integrar el PR #3.**
 
 Decisiones confirmadas:
 
