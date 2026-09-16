@@ -5,7 +5,7 @@ Cash-X es una aplicación genérica de libro de caja para registrar ingresos, eg
 ## Estado
 
 - Versión estable: ninguna todavía.
-- Desarrollo: pre-0.1, fase de definición y arquitectura.
+- Desarrollo: pre-0.1; contrato funcional definido, implementación aún no iniciada.
 - Rama principal: `main`.
 - Código de aplicación: aún no iniciado.
 
@@ -22,15 +22,17 @@ Cash-X es una aplicación genérica de libro de caja para registrar ingresos, eg
 
 - Varios libros/cajas independientes.
 - Ingresos y egresos.
+- Saldo inicial opcional.
 - Categorías configurables.
 - Saldo e historial.
-- Comprobantes adjuntos.
+- Papelera con restauración.
+- Cero, uno o varios comprobantes opcionales por movimiento.
 - Búsqueda y filtros.
 - Reportes y exportación.
 - Respaldo y restauración.
 - Seguridad local.
 
-El alcance exacto se cerrará por checkpoints antes de implementar cada módulo.
+El contrato funcional aprobado está en `docs/PRODUCT_SPEC.md`.
 
 ## Tecnología actual
 
@@ -40,6 +42,7 @@ La base técnica heredada y aceptada como punto de partida es TypeScript + Vite.
 
 - `AGENT_RULES.md`: reglas obligatorias de trabajo.
 - `docs/STATE.md`: estado real y siguiente paso.
+- `docs/PRODUCT_SPEC.md`: contrato funcional aprobado para v0.1.
 - `docs/ROADMAP.md`: checkpoints en orden.
 - `docs/ARCHITECTURE.md`: límites entre capas.
 - `docs/DECISIONS.md`: decisiones técnicas.
