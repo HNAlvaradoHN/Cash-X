@@ -5,15 +5,18 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   generate-lockfile:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
+      - name: Checkout PR branch
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -22,6 +25,18 @@ jobs:
 
       - name: Generate package-lock.json
         run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+
+      - name: Commit lockfile when changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          if git diff --cached --quiet; then
+            echo "package-lock.json is already reproducible."
+            exit 0
+          fi
+          git commit -m "chore(deps): add reproducible npm lockfile"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
 
       - name: Upload package-lock.json
         uses: actions/upload-artifact@v4
