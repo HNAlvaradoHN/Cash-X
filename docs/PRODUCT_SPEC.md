@@ -1,27 +1,56 @@
 # Contrato funcional mínimo de Cash-X
 
-**Estado:** aprobado para v0.1 funcional
-**Sesión:** Cash-X #1
+**Estado:** aprobado para v0.1 funcional; refinamientos de Checkpoint 3 en curso  
+**Sesión:** Cash-X #1  
 **Fecha:** 2026-09-16
 
 ## Objetivo
 
 Cash-X es un libro de caja genérico, offline-first y simple. Debe servir para iglesia, negocio, hogar u otros usos sin imponer categorías específicas.
 
+La regla de producto es simple: el usuario registra los datos necesarios y Cash-X calcula automáticamente todo valor derivado.
+
+## Terminología de interfaz
+
+El modelo interno puede usar el concepto técnico de movimiento, pero la interfaz principal no debe obligar al usuario a entender ese término.
+
+Acciones principales visibles:
+
+- `+ Ingreso`;
+- `− Egreso`.
+
 ## Libros / cajas
 
 Cada libro es independiente y tiene:
 
-- nombre;
-- icono opcional;
-- una moneda definida para ese libro;
+- nombre obligatorio;
+- una moneda obligatoria y única para ese libro;
 - saldo inicial opcional;
+- icono opcional;
+- color/portada opcional;
 - categorías propias;
-- movimientos propios.
+- campo adicional configurable opcional;
+- ingresos y egresos propios;
+- estado activo o archivado;
+- fechas internas automáticas de creación y última modificación.
 
-El saldo inicial no es obligatorio. Si no se define, se considera cero. Si se modifica después de existir movimientos, la interfaz debe advertir que cambiará el saldo histórico calculado.
+El saldo inicial no es obligatorio. Si no se define, se considera cero. Si se modifica después de existir registros, la interfaz debe advertir que cambiará el saldo histórico calculado.
 
-## Movimientos
+### Icono y color
+
+Para v0.1:
+
+- el icono se elige desde un catálogo integrado o mediante emoji;
+- no se requiere imagen/logo personalizado;
+- el usuario elige un color principal;
+- Cash-X genera automáticamente una tonalidad secundaria compatible;
+- no se obliga al usuario a configurar dos colores manualmente.
+
+### Archivar libro
+
+Archivar no elimina datos. Un libro archivado deja de mostrarse en la vista principal, conserva toda su información y puede restaurarse a estado activo.
+
+## Ingresos y egresos
 
 Tipos permitidos:
 
@@ -32,25 +61,73 @@ Campos mínimos:
 
 - tipo: obligatorio;
 - monto: obligatorio y mayor que cero;
-- fecha: obligatoria;
-- hora: automática pero editable;
-- categoría: obligatoria;
-- concepto: obligatorio;
+- descripción/concepto: obligatoria y breve;
+- categoría principal: obligatoria;
+- fecha: obligatoria, inicializada con la fecha actual pero completamente editable;
+- campo adicional: opcional y visible solo si fue configurado para el libro;
 - nota: opcional;
 - referencia/persona: opcional;
-- comprobantes: opcionales, cero o varios;
-- fecha de creación: automática;
-- fecha de última modificación: automática.
+- comprobantes: opcionales, cero, uno o varios;
+- fecha/hora real de creación: automática e interna;
+- fecha/hora de última modificación: automática e interna.
 
-No se debe exigir guardar datos personales para registrar un movimiento.
+La hora no se pedirá como campo normal al usuario. Cash-X conserva internamente los timestamps reales de creación y modificación.
+
+No se debe exigir guardar datos personales para registrar un ingreso o egreso.
+
+### Formulario base
+
+La vista principal del formulario muestra monto, descripción, categoría, fecha y, cuando exista, el campo adicional configurado.
+
+`Más detalles` permanece cerrado por defecto y contiene:
+
+- nota;
+- referencia/persona;
+- comprobantes.
+
+Los datos opcionales ya guardados nunca se pierden por estar visualmente contraídos.
 
 ## Categorías
 
-Las categorías son configurables por libro. Se pueden crear, editar, ordenar y desactivar.
+Las categorías son configurables por libro. Se pueden crear, editar y ordenar.
 
-Una categoría usada por movimientos existentes no debe eliminarse de forma que rompa el historial. Para nuevos registros puede quedar desactivada mientras los movimientos antiguos conservan su referencia.
+### Eliminación de categorías
 
-## Saldo
+Toda eliminación iniciada por el usuario requiere confirmación previa.
+
+Si una categoría nunca fue usada, puede eliminarse después de confirmar.
+
+Si una categoría ya fue usada:
+
+- Cash-X advierte cuántos registros la utilizan;
+- si el usuario confirma, deja de estar disponible para registros nuevos;
+- los registros históricos siguen mostrando normalmente el nombre de esa categoría;
+- al editar un registro histórico no se obliga a reemplazarla;
+- si el usuario decide cambiarla, el selector ofrece únicamente categorías actualmente disponibles.
+
+La implementación debe preservar internamente la referencia histórica aunque la interfaz trate la categoría como eliminada.
+
+## Campo adicional configurable
+
+Cada libro puede tener como máximo el campo adicional previsto para v0.1. Es opcional y no aparece si el usuario no lo configura.
+
+El usuario define:
+
+- el nombre visible del campo, por ejemplo `Actividad`, `Sucursal` o `Proyecto`;
+- las opciones seleccionables de ese campo.
+
+Ejemplo:
+
+- nombre: `Actividad`;
+- opciones: `Culto dominical`, `Culto de jóvenes`, `Misiones`.
+
+Las opciones del campo adicional siguen la misma regla general de integridad que las categorías: si una opción usada se retira, los registros históricos conservan el valor y la opción deja de ofrecerse para registros nuevos.
+
+Si el campo adicional no existe en un libro, no aparece en formulario, historial, detalle ni reportes.
+
+Si el campo existe pero un registro no tiene valor, las vistas tabulares o reportes que muestren ese campo utilizan `—` para indicar valor vacío.
+
+## Saldo y recálculo automático
 
 Regla única:
 
@@ -58,9 +135,23 @@ Regla única:
 
 La lógica de cálculo pertenece al dominio, nunca al dashboard ni a componentes visuales.
 
-## Historial, búsqueda y filtros
+Cash-X recalcula automáticamente los saldos afectados cuando se modifica información con impacto financiero o cronológico, incluyendo:
 
-Los movimientos se muestran inicialmente del más reciente al más antiguo.
+- monto;
+- tipo ingreso/egreso;
+- fecha;
+- saldo inicial;
+- envío a Papelera;
+- restauración;
+- eliminación definitiva cuando corresponda.
+
+El usuario nunca corrige saldos derivados manualmente.
+
+## Historial, búsqueda, filtros y detalle
+
+Los registros se muestran inicialmente del más reciente al más antiguo y pueden agruparse por fecha.
+
+En listas y vistas previas, todo contenido variable debe tener límites visuales para no romper el diseño. Esto incluye descripción, categoría, campo adicional, nota, referencia y otros textos configurables. La vista de detalle permite consultar el contenido completo y puede usar `Ver más / Ver menos` cuando sea necesario.
 
 Filtros mínimos:
 
@@ -70,21 +161,50 @@ Filtros mínimos:
 - texto;
 - rango de montos.
 
-La búsqueda debe cubrir al menos concepto, nota y referencia cuando exista.
+La búsqueda debe cubrir al menos descripción, nota y referencia cuando exista.
 
-## Edición y eliminación
+Al abrir un registro se muestra su detalle completo y se permiten las acciones correspondientes de edición y eliminación.
 
-Los movimientos se pueden editar. Se conserva fecha de creación y se actualiza la fecha de última modificación.
+## Eliminación, Papelera y restauración
 
-La eliminación normal usa Papelera:
+### Regla general de confirmación
 
-- un movimiento enviado a Papelera deja de contar en el saldo activo;
-- se puede restaurar;
-- el borrado definitivo requiere confirmación explícita.
+Toda acción destructiva iniciada por el usuario debe pedir confirmación antes de ejecutarse.
+
+La eliminación normal envía a Papelera y no destruye inmediatamente los datos.
+
+### Retención
+
+Los elementos permanecen en Papelera como máximo 30 días.
+
+Mientras estén en Papelera:
+
+- pueden restaurarse;
+- muestran el tiempo restante antes de su eliminación automática;
+- pueden eliminarse definitivamente de forma manual, siempre con una nueva confirmación explícita.
+
+Al cumplirse los 30 días, Cash-X puede realizar la limpieza automática sin una nueva pregunta porque el usuario ya confirmó el envío inicial a Papelera y se le informó la retención.
+
+### Registros individuales
+
+Un ingreso o egreso enviado a Papelera deja de contar en el saldo activo. Al restaurarlo, vuelve a contar y los saldos afectados se recalculan automáticamente.
+
+### Libros completos
+
+Eliminar un libro envía el libro completo a Papelera como una sola unidad lógica junto con sus datos relacionados, incluyendo:
+
+- ingresos y egresos;
+- categorías;
+- campo adicional y sus opciones;
+- notas y referencias;
+- comprobantes;
+- configuración propia del libro.
+
+Restaurar el libro recupera la unidad completa conservando sus relaciones.
 
 ## Comprobantes
 
-Un movimiento puede tener cero, uno o varios comprobantes. No son obligatorios.
+Un ingreso o egreso puede tener cero, uno o varios comprobantes. No son obligatorios.
 
 Tipos iniciales previstos:
 
@@ -95,15 +215,54 @@ Los comprobantes permanecen fuera del repositorio y deben tener límites razonab
 
 ## Reportes iniciales
 
-El producto debe poder calcular reportes por:
+La exportación avanzada se implementará después del núcleo financiero, pero el comportamiento de producto aprobado es el siguiente.
 
-- día;
+### Alcance
+
+Cada reporte corresponde a un solo libro. No se combinan varios libros en un mismo reporte en v0.1.
+
+Periodos visibles previstos:
+
+- semana;
 - mes;
 - año;
-- rango personalizado;
-- categoría.
+- rango personalizado.
 
-Cada reporte debe poder mostrar ingresos, egresos y saldo neto del periodo. La exportación PDF/CSV/Excel se implementará después del núcleo financiero.
+### Contenido
+
+El reporte debe permitir que otra persona reconstruya las cuentas y verifique los totales.
+
+Incluye al inicio:
+
+- saldo al inicio del periodo;
+- total de ingresos;
+- total de egresos;
+- saldo final;
+- cantidad de registros.
+
+El saldo de apertura de un periodo intermedio se calcula usando el saldo inicial del libro y todos los registros activos anteriores al inicio del periodo.
+
+El detalle principal es un libro mayor cronológico combinado, no dos listas separadas, con información equivalente a:
+
+`Fecha | Descripción | Categoría | Campo adicional si existe | Ingreso | Egreso | Saldo`
+
+Cada fila muestra el saldo acumulado después de ese registro.
+
+Al final se muestran totales y una verificación matemática equivalente a:
+
+`saldo inicial del periodo + ingresos - egresos = saldo final`.
+
+También se incluye un resumen por categorías para ingresos y egresos.
+
+Cuando un campo incluido en el reporte existe pero un registro concreto no tiene valor, se muestra `—` para dejar claro que el valor está vacío. Si el campo adicional no fue configurado para el libro, no aparece ninguna columna o sección para él.
+
+### Comprobantes en PDF
+
+`Incluir comprobantes` estará activado por defecto al generar el reporte.
+
+El objetivo visual es mantener el PDF limpio: los comprobantes no deben añadirse como fotografías gigantes al final. Se evaluará integrar/adjuntar archivos al PDF y representarlos mediante un indicador en la fila correspondiente.
+
+La compatibilidad de archivos adjuntos dentro de PDF varía entre lectores, especialmente en Android. Antes de implementar esta parte se debe probar soporte real y definir un fallback sin ensuciar el reporte. No se promete compatibilidad universal hasta realizar esa validación.
 
 ## Offline y respaldo
 
@@ -138,7 +297,10 @@ Previsto para v0.1:
 - préstamos/cuentas por cobrar;
 - IA;
 - conversión automática entre monedas;
-- contabilidad de partida doble.
+- contabilidad de partida doble;
+- agrupaciones tipo libro compartido/split book;
+- presupuestos y metas como funciones centrales;
+- imágenes/logos personalizados para cada libro.
 
 ## Contrato de UI
 
