@@ -10,27 +10,41 @@ Resultado: repositorio oficial documentado, reglas registradas, seguridad/privac
 
 ## Checkpoint 2 — Contrato funcional mínimo
 
-**Siguiente paso.**
+**Estado: completado en Cash-X #1.**
 
-Definir antes de programar:
+Resultado aprobado:
 
-- qué es un libro/caja;
+- libros/cajas independientes;
 - ingreso y egreso;
-- campos obligatorios/opcionales;
+- saldo inicial opcional;
 - categorías configurables;
-- cálculo de saldo;
-- edición y eliminación;
-- fechas y ordenamiento;
-- búsqueda/filtros;
-- comprobantes y límites;
-- moneda por libro;
-- reglas de validación.
+- cálculo de saldo en dominio;
+- edición de movimientos;
+- Papelera con restauración y borrado definitivo confirmado;
+- fechas, ordenamiento, búsqueda y filtros;
+- comprobantes opcionales múltiples;
+- una moneda por libro;
+- reportes básicos por periodo/categoría;
+- operación esencial offline;
+- respaldo local manual como primera estrategia;
+- PIN/biometría opcionales cuando la plataforma lo permita;
+- sin login, nube obligatoria ni multiusuario en v0.1.
 
-Salida esperada: comportamiento definido y casos de prueba principales, sin elegir todavía servicios innecesarios.
+Contrato detallado: `docs/PRODUCT_SPEC.md`.
 
 ## Checkpoint 3 — Persistencia local y dominio
 
-Implementar el modelo mínimo y almacenamiento offline con migraciones, integridad y pruebas. La UI será mínima y no definirá la arquitectura.
+**Siguiente paso.**
+
+Antes de programar UI:
+
+1. definir entidades y contratos de dominio;
+2. decidir almacenamiento local con criterios de integridad, migración, backup y compatibilidad PWA/Android;
+3. implementar libros, categorías, movimientos, Papelera y cálculo de saldos sin depender de la UI;
+4. añadir pruebas del dominio para saldo, edición, eliminación/restauración y validaciones;
+5. validar migraciones y recuperación básica.
+
+La UI será mínima y no definirá la arquitectura.
 
 ## Checkpoint 4 — Interfaz base
 
@@ -48,7 +62,7 @@ Elegir y justificar la estrategia de empaquetado Android. Configurar build repro
 
 ## Checkpoint 7 — Reportes, exportación y backup
 
-Añadir reportes/exportaciones y un formato de respaldo/restauración versionado y validado.
+Añadir exportaciones PDF/CSV/Excel y un formato de respaldo/restauración versionado y validado.
 
 ## Fuera de alcance hasta existir necesidad aprobada
 
@@ -57,4 +71,8 @@ Añadir reportes/exportaciones y un formato de respaldo/restauración versionado
 - cuentas en nube obligatorias;
 - suscripciones;
 - analítica invasiva;
-- funciones contables avanzadas no requeridas.
+- integración bancaria;
+- inventario;
+- IA;
+- conversión automática de moneda;
+- contabilidad avanzada no requerida.
