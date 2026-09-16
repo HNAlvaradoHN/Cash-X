@@ -4,13 +4,13 @@ El orden puede cambiar si aparece nueva evidencia. Cada checkpoint se cierra ant
 
 ## Checkpoint 1 — Base limpia del proyecto
 
-Objetivo: convertir el repositorio heredado en la fuente de verdad de Cash-X sin arrastrar código ni builds de otros proyectos.
+**Estado: completado en Cash-X #1.**
 
-Estado: en curso durante Cash-X #1.
-
-Incluye reglas, documentación, seguridad, arquitectura inicial y retiro de ramas legacy.
+Resultado: repositorio oficial documentado, reglas registradas, seguridad/privacidad definidas, arquitectura modular inicial establecida y ramas legacy neutralizadas sin integrarlas en Cash-X.
 
 ## Checkpoint 2 — Contrato funcional mínimo
+
+**Siguiente paso.**
 
 Definir antes de programar:
 

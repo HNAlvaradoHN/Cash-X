@@ -8,45 +8,52 @@
 - Oficial: `HNAlvaradoHN/Cash-X`
 - Visibilidad: pública.
 - Rama principal: `main`.
-- Rama de trabajo del checkpoint actual: `chore/cash-x-bootstrap`.
-- PR abiertos antes de este checkpoint: ninguno.
+- PR activo: ninguno.
+- PR #1 `chore(project): bootstrap Cash-X repository`: integrado.
 
 ## Versiones
 
 - Versión estable: ninguna.
-- Versión en desarrollo: pre-0.1 (definición/arquitectura; sin build de Cash-X).
+- Versión en desarrollo: pre-0.1 (definición funcional pendiente; sin build de Cash-X).
 - Último punto estable de aplicación: no existe todavía.
 - Despliegue estable: ninguno.
 - Despliegue experimental: ninguno.
 
 ## Estado funcional
 
-No existe todavía código de aplicación Cash-X en `main`. El repositorio se está preparando como base limpia antes de programar.
+No existe todavía código de aplicación Cash-X. El repositorio ya contiene únicamente la base documental/configuración oficial necesaria para empezar el diseño funcional sin arrastrar implementaciones anteriores.
 
-## Hechos verificados al iniciar Cash-X #1
+## Checkpoint 1 — Base limpia del proyecto
 
-- `main` contenía solo documentación/configuración genérica del proyecto anterior.
-- Existían ramas legacy de REyDI/Gestión Iglesia con payloads de build Android y workflows ajenos a Cash-X.
-- `feat/definir-funcionalidad` era idéntica a `main`.
-- No había Pull Requests.
-- No existe CI de Cash-X en `main`.
-- La documentación decía todavía `Mi PWA App` y que GitHub era privado, por lo que estaba desactualizada.
-- No se detectaron secretos visibles en los archivos de `main`; las ramas legacy contienen un payload comprimido opaco que no forma parte de Cash-X y no debe reutilizarse.
+**Estado: completado.**
 
-## Checkpoint actual
+Resultado verificado:
 
-**Checkpoint 1 — Limpiar y establecer la base oficial de Cash-X.**
+- README y reglas reemplazaron la documentación genérica anterior.
+- Arquitectura inicial separa UI, dominio, persistencia, adjuntos, backup/exportación y plataforma.
+- La UI quedó definida como reemplazable sin reescribir dominio ni persistencia.
+- Se documentaron seguridad, privacidad, decisiones, roadmap, problemas conocidos y sesiones.
+- `.gitignore` cubre secretos, claves, bases locales, respaldos, comprobantes y artefactos Android sensibles.
+- `.env.example` vacío y `docs/PLAN.md` obsoleto fueron retirados.
+- No se añadieron dependencias ni código funcional.
+- PR #1 fue integrado a `main`.
 
-Incluye:
+## Ramas legacy
 
-- actualizar reglas y documentación;
-- reforzar exclusiones de archivos privados;
-- definir arquitectura modular inicial;
-- registrar seguridad, decisiones, roadmap y sesiones;
-- retirar de uso las ramas legacy sin fusionarlas en Cash-X.
+Las ramas heredadas `apk-build-gestion-iglesia`, `reydi-payload-prep` y `feat/definir-funcionalidad` ya no contienen trabajo distinto: sus referencias fueron movidas al mismo commit que `main`. La rama temporal `chore/cash-x-bootstrap` también fue neutralizada al terminar el PR.
 
-No incluye código funcional de la app, dependencias nuevas, base de datos, backend ni CI de compilación.
+Los nombres de esas ramas todavía existen porque la conexión actual permite mover referencias pero no eliminarlas. No deben usarse para trabajo nuevo.
+
+Importante: commits antiguos pueden seguir siendo accesibles por SHA durante un tiempo aunque ninguna rama los apunte. Si una credencial real hubiera estado allí, debe rotarse; no hay evidencia de secretos visibles en el `main` actual.
+
+## CI
+
+Cash-X todavía no tiene CI porque aún no existe código que compilar o probar. Los runs históricos pertenecían al proyecto anterior y no representan el estado de Cash-X.
+
+## Trabajo paralelo
+
+No hay PR ni rama con trabajo funcional Cash-X pendiente de integrar.
 
 ## Siguiente paso exacto
 
-Después de cerrar este checkpoint: **Checkpoint 2 — definir el contrato funcional mínimo de libros, movimientos, categorías, saldos, edición/eliminación y comprobantes antes de elegir persistencia o construir UI.**
+**Checkpoint 2 — definir el contrato funcional mínimo de libros, movimientos, categorías, saldos, edición/eliminación, fechas, moneda y comprobantes antes de elegir persistencia o construir el dashboard.**
