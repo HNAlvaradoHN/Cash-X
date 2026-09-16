@@ -15,8 +15,10 @@
 - PR #17 `ci(android): validate generated Capacitor build`: integrado.
 - PR #18 `docs(state): close Android build spike`: integrado.
 - PR #20 `test(android): validate WebView IndexedDB persistence`: integrado.
-- Issue #19 `Checkpoint 3 spike: validate IndexedDB persistence in Android WebView`: cerrado como completado por PR #20.
-- PR funcional activo después de integrar PR #20: ninguno.
+- PR #21 `docs(state): record Android WebView persistence validation`: integrado.
+- PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado.
+- Issue #19 `Checkpoint 3 spike: validate IndexedDB persistence in Android WebView`: cerrado como completado.
+- Issue #22 `Checkpoint 3 spike: validate attachment Blob storage and cleanup`: cerrado como completado por PR #23.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
@@ -33,11 +35,11 @@ Continúan aprobadas las reglas de libros independientes, ingreso/egreso, catego
 
 **Formalización lógica completada.**
 
-### Persistencia local — primer tramo
+### Persistencia local estructurada
 
-**Completado e integrado en `main`.**
+**Completada e integrada.**
 
-PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esquema, Papelera/restauración, backup/restauración idempotente y CI. Sus pruebas cubren reapertura, rollback atómico, Papelera/restauración, migración y restauración repetida sin duplicados.
+PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esquema, Papelera/restauración, backup/restauración idempotente a nivel de objetos y CI. Sus pruebas cubren reapertura, rollback atómico, Papelera/restauración, migración y restauración repetida sin duplicados.
 
 ### Android — build y persistencia WebView
 
@@ -45,38 +47,43 @@ PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esque
 
 PR #17 validó generación temporal de `android/`, `cap sync`, Gradle `assembleDebug` y creación de APK debug.
 
-PR #20 añadió un probe técnico aislado que usa las implementaciones reales `CashXDatabase` y `LocalPersistence`. En un emulador Android API 35 el CI:
+PR #20 añadió un probe técnico aislado que usa las implementaciones reales `CashXDatabase` y `LocalPersistence`. En un emulador Android API 35 el CI escribe datos, fuerza el cierre de `com.cashx.app`, abre nuevamente la aplicación y comprueba la integridad de los datos persistidos.
 
-- instaló el APK de prueba;
-- en el primer arranque escribió y volvió a leer un libro de prueba en Dexie/IndexedDB;
-- forzó el cierre de `com.cashx.app`;
-- abrió nuevamente la aplicación en un segundo arranque frío;
-- volvió a leer el mismo libro y comprobó identificador, nombre, moneda, saldo inicial, estado y ausencia de borrado.
+### Comprobantes binarios
 
-El job `android-build` completo terminó correctamente, incluyendo la comprobación `Verify IndexedDB survives Android app restart`.
+**Primer adaptador local validado.**
 
-Esto demuestra persistencia real dentro de Android WebView en emulador. **Todavía no equivale a una prueba en dispositivo físico ni a una aplicación lista para uso financiero real.**
+PR #23 añadió el contrato `AttachmentStore` y el adaptador `DexieAttachmentStore`. Las pruebas demuestran:
 
-Durante el spike se corrigieron dos problemas de infraestructura sin alterar dominio ni persistencia: exposición de `adb` en `PATH` y uso explícito de `ANDROID_AVD_HOME` para que `avdmanager` y el emulador resolvieran el mismo AVD.
+- almacenamiento y lectura de `Blob` con metadatos;
+- cierre/reapertura de IndexedDB conservando un `Blob` de prueba de 1 MiB y sus bytes extremos;
+- varios comprobantes por registro y orden estable;
+- rechazo de comprobantes huérfanos o asociados a un registro en Papelera;
+- rollback completo de un lote cuando IndexedDB rechaza una escritura;
+- Papelera, restauración, eliminación definitiva protegida y purge por fecha;
+- rechazo de metadatos de tamaño que no coinciden con los bytes reales;
+- persistencia de un comprobante binario real dentro de Android WebView emulado después de `force-stop` y segundo arranque frío.
 
-### Pendiente del spike
+Esto es evidencia suficiente para mantener `Blob` en IndexedDB como primer adaptador de v0.1. **No fija todavía un tamaño máximo de producto ni sustituye pruebas de cuota/memoria en dispositivos físicos.** Si evidencia posterior lo exige, `AttachmentStore` permite mover binarios a OPFS o filesystem nativo sin tocar el dominio financiero.
 
-- probar comprobantes binarios (`Blob`) y límites reales;
-- validar eliminación/cleanup de comprobantes y recuperación ante fallos más agresivos;
-- generar `package-lock.json` para instalaciones reproducibles;
+## Pendiente de Checkpoint 3
+
+- generar y versionar `package-lock.json` y usar instalación reproducible en CI;
+- definir el formato externo de backup que transporte comprobantes binarios sin asumir que un `Blob` se serializa correctamente a JSON;
 - validar backup/restauración entre instalaciones de prueba;
+- probar recuperación ante fallos más agresivos y límites/cuotas reales en dispositivo;
 - implementar y probar Google OAuth/Drive;
-- probar dos instalaciones, offline/reconexión, idempotencia y conflictos;
+- probar dos instalaciones, offline/reconexión, reintentos, idempotencia y conflictos;
 - realizar prueba física Android antes de considerar una entrega real.
 
 ## CI
 
-Cash-X tiene CI propio. `main` valida typecheck, tests, build web, generación/build Android debug y persistencia IndexedDB/Dexie tras cierre forzado y reapertura en un emulador Android API 35.
+Cash-X tiene CI propio. `main` valida typecheck, tests, build web, generación/build Android debug y persistencia real de Dexie/IndexedDB —incluidos comprobantes `Blob`— tras cierre forzado y reapertura en un emulador Android API 35.
 
 ## Trabajo paralelo
 
-No hay PR funcional abierto ni trabajo paralelo identificado después de integrar PR #20.
+No hay trabajo paralelo identificado después de integrar PR #23.
 
 ## Siguiente paso exacto
 
-**Validar comprobantes binarios detrás de `AttachmentStore`: guardar, leer y eliminar `Blob` de tamaños de prueba, comprobar cleanup y fallos de escritura sin afectar registros financieros. Después incorporar el lockfile reproducible y continuar con Google Drive. No construir dashboard todavía.**
+**Cerrar reproducibilidad de instalación: generar `package-lock.json`, cambiar CI a `npm ci` y demostrar que web, tests y Android siguen verdes con dependencias bloqueadas. Después validar el formato de backup entre instalaciones y continuar con Google Drive. No construir dashboard todavía.**
