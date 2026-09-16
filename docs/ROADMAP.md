@@ -28,11 +28,11 @@ Resultado aprobado:
 - operación esencial offline;
 - respaldo local manual como primera estrategia;
 - PIN/biometría opcionales cuando la plataforma lo permita;
-- sin login, nube obligatoria ni multiusuario en v0.1.
+- sin login ni nube obligatorios en v0.1.
 
 Contrato detallado: `docs/PRODUCT_SPEC.md`.
 
-## Checkpoint 3 — Persistencia local y dominio
+## Checkpoint 3 — Persistencia local, dominio y sincronización opcional
 
 **Estado: en progreso en Cash-X #1.**
 
@@ -52,17 +52,29 @@ Ya definidos/refinados:
 - estrategia de plataforma: una base TypeScript + Vite, PWA y Android mediante Capacitor;
 - persistencia v0.1: IndexedDB mediante Dexie en PWA y Android, detrás de contratos de repositorio;
 - comprobantes detrás de `AttachmentStore`, con adaptador inicial simple y posibilidad de cambiar a OPFS/sistema de archivos nativo si las pruebas lo justifican;
-- PWA y APK tratados como instalaciones separadas, con backup/restauración como vía inicial de traslado de datos.
+- modo completamente local sin cuenta ni nube;
+- Google Drive como único proveedor cloud inicial y opcional, detrás de `CloudSyncProvider`;
+- sin Supabase, Firebase, Cloudflare ni backend propio para autenticación/sincronización;
+- Google OAuth en lugar de un sistema propio de correo+PIN;
+- sincronización interna con mínimo privilegio (`drive.appdata`) y respaldos visibles opcionales mediante `drive.file`;
+- protocolo de sync idempotente, versionado y tolerante a red interrumpida;
+- conflictos sobre el mismo registro preservados para resolución, sin sobrescritura silenciosa;
+- backup/restauración manual como fallback cuando Drive no esté conectado o falle;
+- TeraBox reservado para evaluación futura mediante API oficial, no como dependencia inicial.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. implementar un spike mínimo de persistencia con Dexie y Capacitor;
+1. implementar un spike mínimo local con Dexie y Capacitor;
 2. validar creación/apertura offline, transacciones, migraciones y recuperación ante fallos;
 3. validar Papelera/restauración y cleanup;
 4. validar comprobantes de prueba y límites;
 5. validar backup/restauración entre instalaciones de prueba;
-6. si el spike pasa, implementar el núcleo financiero independiente de UI;
-7. añadir pruebas del dominio para dinero, saldo, edición, fechas, eliminación/restauración, referencias históricas y validaciones.
+6. añadir un adaptador mínimo Google Drive y probar OAuth en PWA y Android;
+7. validar sincronización de dos instalaciones, trabajo offline, reconexión, idempotencia y reintentos;
+8. provocar un conflicto concurrente sobre el mismo registro y demostrar que no existe pérdida silenciosa;
+9. validar desconexión/reconexión de Drive conservando datos locales;
+10. si el spike completo pasa, implementar el núcleo financiero independiente de UI;
+11. añadir pruebas del dominio, persistencia y sincronización.
 
 La UI será mínima y no definirá la arquitectura.
 
@@ -76,13 +88,19 @@ Validar accesibilidad y que cambiar el dashboard no afecte dominio/persistencia.
 
 Completar instalación PWA, caché de recursos, solicitud/verificación de almacenamiento persistente y comportamiento sin red sin comprometer datos privados.
 
+Integrar la experiencia visible de sincronización opcional: estado local/sincronizando/sin conexión/error, `Sincronizar ahora`, conectar/desconectar Google Drive y recuperación clara ante autorización vencida.
+
 ## Checkpoint 6 — Android y CI
 
 Materializar la estrategia ya elegida con Capacitor: proyecto Android, APK/AAB reproducible y acceso a capacidades nativas necesarias. Configurar CI público sin subir claves de firma ni datos privados.
 
+Validar autenticación Google/Drive en Android y almacenamiento seguro de credenciales/tokens que correspondan al adaptador nativo, sin mover esas responsabilidades al dominio.
+
 ## Checkpoint 7 — Reportes, exportación y backup
 
 Añadir exportaciones PDF/CSV/Excel y completar un formato de respaldo/restauración versionado y validado.
+
+Cuando Google Drive esté conectado, permitir guardar respaldos/exportaciones visibles creados por Cash-X en una estructura administrada por la aplicación sin solicitar acceso amplio al Drive completo.
 
 Dirección funcional ya acordada para PDF:
 
@@ -96,13 +114,15 @@ Dirección funcional ya acordada para PDF:
 
 ## Fuera de alcance hasta existir necesidad aprobada
 
-- backend propio;
-- sincronización multiusuario;
-- cuentas en nube obligatorias;
+- backend propio de sincronización;
+- Supabase/Firebase/Cloudflare como backend obligatorio;
+- cuentas Cash-X en nube obligatorias;
+- multiusuario concurrente sobre un mismo libro;
 - suscripciones;
 - analítica invasiva;
 - integración bancaria;
 - inventario;
 - IA;
 - conversión automática de moneda;
-- contabilidad avanzada no requerida.
+- contabilidad avanzada no requerida;
+- TeraBox u otros proveedores cloud adicionales hasta validar su API oficial y necesidad real.
