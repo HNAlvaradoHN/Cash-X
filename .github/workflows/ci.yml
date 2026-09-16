@@ -37,7 +37,7 @@ jobs:
   android-build:
     needs: verify
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,3 +76,99 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+
+      - name: Build Android persistence probe
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          index = Path('index.html')
+          source = index.read_text(encoding='utf-8')
+          marker = 'src="/src/main.ts"'
+          replacement = 'src="/test/android/persistence-probe.ts"'
+          if marker not in source:
+              raise SystemExit('Cash-X entrypoint marker was not found in index.html')
+          index.write_text(source.replace(marker, replacement, 1), encoding='utf-8')
+          PY
+          npm run build
+          npx cap sync android
+          cd android
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Install Android emulator image
+        run: |
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          AVDMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/avdmanager"
+          "$SDKMANAGER" "emulator" "platform-tools" "system-images;android-35;google_apis;x86_64"
+          echo "no" | "$AVDMANAGER" create avd --force --name cashx-ci --package "system-images;android-35;google_apis;x86_64"
+
+      - name: Boot Android emulator
+        run: |
+          sudo chmod 666 /dev/kvm
+          nohup "$ANDROID_HOME/emulator/emulator" \
+            -avd cashx-ci \
+            -no-window \
+            -no-audio \
+            -no-boot-anim \
+            -no-snapshot \
+            -gpu swiftshader_indirect \
+            > /tmp/cashx-emulator.log 2>&1 &
+
+          adb wait-for-device
+          boot_completed=""
+          for _ in $(seq 1 120); do
+            boot_completed="$(adb shell getprop sys.boot_completed | tr -d '\r')"
+            if [ "$boot_completed" = "1" ]; then
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$boot_completed" != "1" ]; then
+            cat /tmp/cashx-emulator.log
+            exit 1
+          fi
+
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+
+      - name: Verify IndexedDB survives Android app restart
+        run: |
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+
+          wait_for_status() {
+            expected="$1"
+            for _ in $(seq 1 30); do
+              if adb logcat -d | grep -q "$expected"; then
+                return 0
+              fi
+
+              adb shell uiautomator dump /sdcard/cashx-window.xml >/dev/null 2>&1 || true
+              adb pull /sdcard/cashx-window.xml /tmp/cashx-window.xml >/dev/null 2>&1 || true
+              if [ -f /tmp/cashx-window.xml ] && grep -q "$expected" /tmp/cashx-window.xml; then
+                return 0
+              fi
+
+              sleep 1
+            done
+
+            echo "Expected Android persistence probe status was not observed: $expected"
+            adb logcat -d || true
+            if [ -f /tmp/cashx-window.xml ]; then
+              cat /tmp/cashx-window.xml
+            fi
+            return 1
+          }
+
+          adb install -r "$APK"
+
+          adb logcat -c
+          adb shell am start -W -n com.cashx.app/.MainActivity
+          wait_for_status "CASHX_PROBE_FIRST_LAUNCH"
+
+          adb shell am force-stop com.cashx.app
+
+          adb logcat -c
+          adb shell am start -W -n com.cashx.app/.MainActivity
+          wait_for_status "CASHX_PROBE_REOPEN_OK"
