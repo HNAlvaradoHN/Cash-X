@@ -104,6 +104,7 @@ jobs:
 
       - name: Boot Android emulator
         run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
           sudo chmod 666 /dev/kvm
           nohup "$ANDROID_HOME/emulator/emulator" \
             -avd cashx-ci \
@@ -135,6 +136,7 @@ jobs:
 
       - name: Verify IndexedDB survives Android app restart
         run: |
+          export PATH="$ANDROID_HOME/platform-tools:$PATH"
           APK="android/app/build/outputs/apk/debug/app-debug.apk"
 
           wait_for_status() {
