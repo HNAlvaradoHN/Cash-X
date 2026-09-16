@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** persistencia local, build Android y reapertura en Android WebView validados; comprobantes/Drive pendientes
+**Estado:** persistencia local estructurada, build Android, reapertura WebView y primer adaptador de comprobantes `Blob` validados; reproducibilidad/backup/Drive pendientes
 
 ## Objetivo
 
@@ -16,6 +16,7 @@ Mantener una sola base de código para PWA y Android, priorizando integridad de 
 - IndexedDB mediante Dexie para datos estructurados locales tanto en PWA como dentro de Android WebView.
 - Acceso únicamente mediante contratos de persistencia; UI no toca Dexie directamente.
 - Comprobantes detrás de `AttachmentStore`.
+- Primer adaptador de comprobantes: `DexieAttachmentStore` con `Blob` en IndexedDB.
 - Google Drive opcional detrás de `CloudSyncProvider`; sin backend propio de Cash-X.
 - SQLite queda como alternativa futura solo si evidencia real justifica migrar.
 
@@ -25,17 +26,46 @@ El adaptador Dexie cubre libros, ingresos/egresos, categorías, campo adicional,
 
 ## Comprobantes
 
-El primer adaptador puede almacenar `Blob` en IndexedDB separado de las tablas lógicas. Antes de release se probarán tamaño, memoria, lectura, eliminación y cleanup. Si los binarios grandes no son adecuados, `AttachmentStore` podrá usar OPFS en PWA y filesystem nativo en Android sin tocar el dominio.
+`AttachmentStore` separa el dominio y los casos de uso de la tecnología concreta de archivos. El primer adaptador, `DexieAttachmentStore`, persiste metadatos y `Blob` en IndexedDB.
+
+PR #23 validó:
+
+- guardado y lectura de bytes + metadatos;
+- varios comprobantes por registro;
+- reapertura con un `Blob` de prueba de 1 MiB en el entorno automatizado;
+- rechazo de adjuntos huérfanos y de adjuntos nuevos sobre registros en Papelera;
+- rollback de un lote completo cuando una escritura falla;
+- Papelera/restauración, eliminación definitiva y purge por fecha;
+- validación de `sizeBytes` contra el tamaño real del `Blob`;
+- persistencia de un comprobante binario en Android WebView emulado después de cierre forzado y segundo arranque frío.
+
+Con esta evidencia, **IndexedDB + Blob se mantiene como el adaptador inicial de v0.1**. Esto no significa que 1 MiB sea un límite de producto ni que IndexedDB tenga la misma cuota disponible en todos los dispositivos. Antes de una entrega real se medirán cuota, memoria y comportamiento con dispositivos/archivos representativos. Si aparece evidencia negativa, `AttachmentStore` permite sustituir el backend por OPFS en PWA y/o filesystem nativo en Android sin cambiar el dominio financiero.
+
+La eliminación de un comprobante sigue la regla global de Cash-X: la capa de aplicación debe pedir confirmación antes de moverlo a Papelera y una segunda confirmación antes de una eliminación definitiva manual. El adaptador evita eliminar permanentemente un adjunto activo.
 
 ## Persistencia PWA y Android
 
 La PWA solicitará almacenamiento persistente cuando sea posible, pero el almacenamiento local nunca sustituye un backup.
 
-El APK/AAB reutiliza la misma aplicación mediante Capacitor. Ya están validados en CI la generación del proyecto Android, `cap sync`, el APK debug y la persistencia real de Dexie/IndexedDB tras un cierre forzado y reapertura dentro de Android WebView emulado.
+El APK/AAB reutiliza la misma aplicación mediante Capacitor. Ya están validados en CI la generación del proyecto Android, `cap sync`, el APK debug y la persistencia real de Dexie/IndexedDB tras un cierre forzado y reapertura dentro de Android WebView emulado, tanto para datos estructurados como para un comprobante `Blob`.
 
-La prueba de runtime usa un probe técnico separado de la UI normal. El primer arranque crea y relee un libro mediante `CashXDatabase` + `LocalPersistence`; después CI fuerza el cierre de la aplicación y, en un segundo arranque frío, comprueba que el mismo libro conserva sus datos. La validación actual corresponde a un emulador Android API 35; un dispositivo físico sigue pendiente antes de una entrega real.
+La validación actual corresponde a un emulador Android API 35; un dispositivo físico sigue pendiente antes de una entrega real.
 
 La configuración de Capacitor se mantiene en `capacitor.config.json`. Se eligió JSON después de comprobar que el loader de `capacitor.config.ts` de Capacitor 8.5.2 no es compatible con TypeScript 7.0.2 bajo el Node 22.12 usado por el proyecto. El cambio evita flags experimentales y reduce acoplamiento de herramientas.
+
+## Backup binario
+
+El backup actual demuestra restauración idempotente a nivel de objetos en memoria, pero **el formato externo definitivo todavía no está cerrado**. Un `Blob` no debe asumirse transportable como bytes mediante `JSON.stringify` sin una codificación/paquete explícito.
+
+Antes de considerar backup/restauración terminado se definirá un contenedor versionado que preserve:
+
+- datos estructurados;
+- metadatos de comprobantes;
+- bytes de los comprobantes;
+- integridad/verificación;
+- importación idempotente y recuperación ante archivo incompleto o corrupto.
+
+Este mismo formato podrá servir como base para transferencia manual entre PWA/APK y para copias almacenadas en Google Drive.
 
 ## Google Drive opcional
 
@@ -73,7 +103,9 @@ PR #20 validó en un emulador Android API 35:
 - escritura y lectura con los adaptadores reales;
 - cierre forzado del proceso de la aplicación;
 - segundo arranque frío;
-- persistencia e integridad del libro almacenado en Dexie/IndexedDB.
+- persistencia e integridad de datos estructurados en Dexie/IndexedDB.
+
+PR #23 amplió esa evidencia a comprobantes binarios y validó `AttachmentStore`/`DexieAttachmentStore`, `Blob`, rollback de lote, Papelera/restauración, purge y persistencia de bytes en Android WebView.
 
 ## Dependencias del spike
 
@@ -90,10 +122,10 @@ Falta `package-lock.json`; se considera pendiente de reproducibilidad antes de r
 
 ## Validaciones restantes de Checkpoint 3
 
-- comprobantes binarios, límites, lectura, eliminación y cleanup;
-- recuperación ante fallos más agresivos de escritura/migración;
-- backup entre instalaciones reales/de prueba;
-- `package-lock.json` e instalación reproducible;
+- `package-lock.json` e instalación reproducible con `npm ci`;
+- formato de backup externo que incluya binarios;
+- backup/restauración entre instalaciones reales/de prueba;
+- límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
 - Google OAuth/Drive;
 - dos instalaciones offline/reconexión;
 - conflicto concurrente sin pérdida silenciosa;
@@ -104,6 +136,8 @@ Falta `package-lock.json`; se considera pendiente de reproducibilidad antes de r
 
 `UI -> casos de uso -> contratos de repositorio -> Dexie/IndexedDB`
 
-`                                 -> SyncEngine -> CloudSyncProvider -> Google Drive`
+`                               -> AttachmentStore -> Dexie/Blob | futuro OPFS/filesystem`
+
+`                               -> SyncEngine -> CloudSyncProvider -> Google Drive`
 
 Capacitor, APIs de navegador, OAuth y proveedores cloud pertenecen a adaptadores de plataforma, no al dominio.

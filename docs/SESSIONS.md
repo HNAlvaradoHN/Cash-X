@@ -13,7 +13,6 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - Fecha de inicio: 2026-09-16.
 - Motivo: inicio formal de Cash-X sobre el repositorio renombrado.
 - Verificación inicial: completada antes de modificar.
-- Estado encontrado: `main` sin código de aplicación; documentación genérica/desactualizada; sin PR; sin CI de Cash-X; ramas legacy de REyDI/Gestión Iglesia separadas de `main`.
 - Checkpoint 1: base limpia del repositorio, completado.
 - PR #1 `chore(project): bootstrap Cash-X repository`: integrado.
 - PR #2 `docs(project): close bootstrap checkpoint`: integrado.
@@ -22,7 +21,7 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - PR #4 `docs(state): close functional contract checkpoint`: integrado.
 - Regla de explicación visual añadida para decisiones de producto y UX.
 - PR #5 `docs(rules): add visual explanation rule`: integrado.
-- Checkpoint 3: persistencia local y dominio, en progreso.
+- Checkpoint 3: persistencia local, dominio y sincronización opcional, en progreso.
 
 #### Decisiones refinadas durante Checkpoint 3
 
@@ -31,6 +30,7 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - Color: el usuario elige uno principal y Cash-X genera una tonalidad secundaria compatible.
 - Icono: catálogo integrado o emoji en v0.1; sin logo/imagen personalizada.
 - Formulario de ingreso/egreso: monto, descripción, categoría y fecha obligatorios; nota, referencia/persona y comprobantes bajo `Más detalles`, cerrado por defecto.
+- El campo monto admite operaciones de calculadora (`200 + 100`, etc.); se guarda el resultado exacto y la aritmética financiera no usa errores de coma flotante como fuente de verdad.
 - La fecha es editable; la hora no se pide al usuario y los timestamps reales se guardan automáticamente.
 - Campo adicional opcional por libro: el usuario define el nombre visible (`Actividad`, `Sucursal`, `Proyecto`, etc.) y sus opciones. Si no existe, no aparece en formulario, historial, detalle ni reporte.
 - Si un campo existe pero un registro no tiene valor, se usa `—` en vistas tabulares/reportes cuando corresponda.
@@ -45,16 +45,40 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - `Incluir comprobantes` estará activado por defecto en PDF; se busca mantener el PDF limpio y se evaluará compatibilidad real de adjuntos integrados antes de prometer soporte universal.
 - No seguir profundizando ahora en detalles cosméticos de PDF; la implementación de reportes pertenece a un checkpoint posterior.
 
+#### Arquitectura y persistencia aprobadas
+
+- Una sola base de código TypeScript + Vite.
+- PWA offline-first y Android mediante Capacitor.
+- Persistencia estructurada local con Dexie/IndexedDB detrás de contratos; UI no accede directamente a Dexie.
+- Sin Supabase, Firebase, Cloudflare ni backend propio obligatorio.
+- Sin conexión a nube, Cash-X funciona completamente con almacenamiento local.
+- Google Drive será el proveedor cloud opcional inicial mediante Google OAuth; cada dispositivo conserva una copia local y sincroniza cuando Drive está conectado.
+- Se prioriza acceso limitado de Drive (`appDataFolder`/archivos de la aplicación) en lugar de acceso amplio al Drive del usuario.
+- TeraBox queda como proveedor futuro solamente si existe API oficial adecuada y una necesidad aprobada.
+- `AttachmentStore` separa los comprobantes del motor concreto de almacenamiento; el primer adaptador usa `Blob` en IndexedDB y puede sustituirse por OPFS/filesystem nativo si las pruebas lo exigen.
+
+#### Validaciones técnicas completadas en Checkpoint 3
+
+- PR #14 `spike(persistence): validate local Dexie foundation`: integrado. Añadió scaffold de aplicación, Dexie/IndexedDB, migración, Papelera/restauración, backup/restauración idempotente a nivel de objetos y CI.
+- PR #15 `docs(state): close local persistence spike`: integrado.
+- PR #17 `ci(android): validate generated Capacitor build`: integrado. Generación de proyecto Android, `cap sync`, Gradle `assembleDebug` y APK debug verdes en CI.
+- PR #18 `docs(state): close Android build spike`: integrado.
+- PR #20 `test(android): validate WebView IndexedDB persistence`: integrado. Android API 35 emulado escribió datos reales en Dexie/IndexedDB, cerró forzosamente la app y los releyó íntegros en un segundo arranque frío.
+- PR #21 `docs(state): record Android WebView persistence validation`: integrado.
+- PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado. Añadió `AttachmentStore`/`DexieAttachmentStore` y validó comprobantes `Blob`, varios adjuntos, integridad de bytes/metadatos, rechazo de huérfanos, rollback de lote, Papelera/restauración, purge y persistencia binaria tras reapertura también en Android WebView emulado.
+- El primer intento del test de comprobantes detectó una incompatibilidad de tipos de TypeScript 7 entre `Uint8Array<ArrayBufferLike>` y `BlobPart`; se corrigió creando el `Blob` desde un `ArrayBuffer` explícito y la validación posterior quedó verde.
+
 #### Estado actual de la sesión
 
-- No existe todavía código funcional Cash-X.
-- No existe CI de aplicación Cash-X.
-- Las reglas funcionales necesarias para modelar el dominio están mucho más definidas.
-- Siguiente paso real: formalizar entidades/contratos de dominio y evaluar persistencia local compatible con PWA + Android antes de implementar el núcleo financiero.
+- Ya existe código técnico Cash-X, aunque todavía no una UI de producto utilizable.
+- Existe CI propio con typecheck, tests, build web, build Android debug y prueba runtime en emulador.
+- Persistencia estructurada y primer almacenamiento local de comprobantes están validados en el alcance actual.
+- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, backup externo binario, sincronización Drive, validaciones físicas y release.
+- Siguiente paso real: versionar `package-lock.json`, cambiar CI a instalación reproducible con `npm ci`, después definir/probar backup externo con binarios y continuar con Google Drive.
 - Estado de la sesión: activa.
 
 ## Regla para la próxima sesión
 
 La próxima sesión solo podrá anunciar `Ing. Cash-X #2 💵` después de verificar este archivo, revisar el estado real del repositorio y registrar #2 en el repositorio.
 
-Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md` y este archivo sin depender de la conversación anterior.
+Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PERSISTENCE.md`, `docs/SYNC.md` y este archivo sin depender de la conversación anterior.
