@@ -27,21 +27,21 @@ Ya completado:
 - CI propio;
 - generación de proyecto Android con Capacitor y compilación de APK debug en CI;
 - persistencia real Dexie/IndexedDB validada en Android WebView emulado: escritura, cierre forzado, reapertura e integridad;
-- `AttachmentStore` + `DexieAttachmentStore` con `Blob` validados: varios comprobantes, reapertura, rollback de lote, Papelera/restauración, purge y bytes persistidos también en Android WebView emulado.
+- `AttachmentStore` + `DexieAttachmentStore` con `Blob` validados: varios comprobantes, reapertura, rollback de lote, Papelera/restauración, purge y bytes persistidos también en Android WebView emulado;
+- `package-lock.json` versionado y CI migrado a instalación reproducible con `npm ci`.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. incorporar `package-lock.json` y usar instalación reproducible con `npm ci` en CI;
-2. definir el formato de backup externo que preserve datos estructurados y comprobantes binarios;
-3. validar backup/restauración entre instalaciones de prueba;
-4. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
-5. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
-6. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
-7. validar desconexión/reconexión de Drive sin perder datos locales;
-8. probar límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
-9. realizar una prueba física Android antes de una entrega real;
-10. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
-11. añadir pruebas del dominio financiero.
+1. definir el formato de backup externo que preserve datos estructurados y comprobantes binarios;
+2. validar backup/restauración entre instalaciones de prueba;
+3. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
+4. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
+5. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
+6. validar desconexión/reconexión de Drive sin perder datos locales;
+7. probar límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
+8. realizar una prueba física Android antes de una entrega real;
+9. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
+10. añadir pruebas del dominio financiero.
 
 La UI final no se construye hasta cerrar las validaciones de persistencia necesarias.
 
