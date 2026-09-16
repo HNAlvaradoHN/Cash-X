@@ -12,8 +12,9 @@
 - Versión en desarrollo: pre-0.1.
 - PR #14 `spike(persistence): validate local Dexie foundation`: integrado.
 - PR #15 `docs(state): close local persistence spike`: integrado.
-- PR activo: #17 `ci(android): validate generated Capacitor build`.
-- Issue #16 asociado al spike Android permanece abierto hasta integrar PR #17.
+- PR #17 `ci(android): validate generated Capacitor build`: integrado.
+- Issue #16 `Checkpoint 3 spike: validate Capacitor Android build`: cerrado como completado por PR #17.
+- PR funcional activo después de integrar PR #17: ninguno.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
@@ -38,16 +39,16 @@ PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esque
 
 ### Android — segundo tramo
 
-**Generación y build debug validados en CI; runtime WebView todavía pendiente.**
+**Generación y build debug completados e integrados; runtime WebView todavía pendiente.**
 
-PR #17 amplía CI para:
+PR #17 validó en CI:
 
-- generar `android/` temporalmente con Capacitor;
-- sincronizar los assets web;
-- compilar `assembleDebug` con JDK 21;
-- producir y subir un APK debug como artefacto temporal.
+- generación temporal de `android/` con Capacitor;
+- sincronización de assets web;
+- compilación Gradle `assembleDebug` con JDK 21;
+- creación y subida de APK debug como artefacto temporal.
 
-El primer intento detectó una incompatibilidad real: Capacitor no pudo cargar `capacitor.config.ts` con TypeScript 7.0.2 en Node 22.12.0. Se corrigió la causa usando `capacitor.config.json`, evitando depender del loader TypeScript de Capacitor. Tras el cambio, `verify` y `android-build` terminaron correctamente, incluyendo generación Android, `cap sync`, Gradle y artefacto APK.
+El primer intento detectó una incompatibilidad entre `capacitor.config.ts`, TypeScript 7.0.2 y el loader de Capacitor 8.5.2. La causa se corrigió usando `capacitor.config.json`; después pasaron tanto el job web como el job Android.
 
 Esto valida el **build Android**, no la ejecución en un emulador/teléfono ni IndexedDB dentro de WebView.
 
@@ -62,12 +63,12 @@ Esto valida el **build Android**, no la ejecución en un emulador/teléfono ni I
 
 ## CI
 
-Cash-X tiene CI propio. En PR #17 pasan tanto el job web (`typecheck`, tests, build) como el job Android (generación Capacitor, sync, Gradle `assembleDebug`, artefacto APK).
+Cash-X tiene CI propio. `main` ya incluye validación web (`typecheck`, tests, build) y build Android debug (Capacitor, `cap sync`, Gradle `assembleDebug`, artefacto APK).
 
 ## Trabajo paralelo
 
-No hay otro PR funcional abierto identificado.
+No hay PR funcional abierto ni trabajo paralelo identificado.
 
 ## Siguiente paso exacto
 
-**Integrar PR #17 con CI verde y después validar persistencia real de Dexie/IndexedDB dentro de WebView Android mediante emulador o dispositivo. No construir dashboard todavía.**
+**Validar persistencia real de Dexie/IndexedDB dentro de Android WebView mediante emulador o dispositivo: escribir datos, cerrar/reabrir la app y comprobar integridad. Después, continuar con comprobantes y Google Drive. No construir dashboard todavía.**
