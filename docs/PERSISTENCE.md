@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** decisión aprobada; primer spike local validado, Android/Drive pendientes
+**Estado:** decisión aprobada; persistencia local y build Android validados, runtime Android/Drive pendientes
 
 ## Objetivo
 
@@ -13,7 +13,7 @@ Mantener una sola base de código para PWA y Android, priorizando integridad de 
 - TypeScript + Vite como base.
 - PWA offline-first.
 - Android mediante Capacitor, sin reescribir dominio/UI en Kotlin.
-- IndexedDB mediante Dexie para datos estructurados locales en PWA y, sujeto a validación, dentro del runtime Android.
+- IndexedDB mediante Dexie para datos estructurados locales en PWA y, sujeto a validación de runtime, dentro de Android WebView.
 - Acceso únicamente mediante contratos de persistencia; UI no toca Dexie directamente.
 - Comprobantes detrás de `AttachmentStore`.
 - Google Drive opcional detrás de `CloudSyncProvider`; sin backend propio de Cash-X.
@@ -31,7 +31,9 @@ El primer adaptador puede almacenar `Blob` en IndexedDB separado de las tablas l
 
 La PWA solicitará almacenamiento persistente cuando sea posible, pero el almacenamiento local nunca sustituye un backup.
 
-El APK/AAB reutilizará la misma aplicación mediante Capacitor. La compatibilidad real de Dexie/IndexedDB en WebView Android debe validarse antes de declararla terminada.
+El APK/AAB reutiliza la misma aplicación mediante Capacitor. La generación del proyecto Android, `cap sync` y un APK debug ya fueron validados en CI. Falta validar que Dexie/IndexedDB se comporte correctamente durante ejecución y reapertura dentro de Android WebView.
+
+La configuración de Capacitor se mantiene en `capacitor.config.json`. Se eligió JSON después de comprobar que el loader de `capacitor.config.ts` de Capacitor 8.5.2 no es compatible con TypeScript 7.0.2 bajo el Node 22.12 usado por el proyecto. El cambio evita flags experimentales y reduce acoplamiento de herramientas.
 
 ## Google Drive opcional
 
@@ -45,9 +47,9 @@ El APK/AAB reutilizará la misma aplicación mediante Capacitor. La compatibilid
 
 Contrato completo: `docs/SYNC.md`.
 
-## Primer spike local — resultado
+## Validaciones completadas
 
-PR #14 implementa el primer adaptador y CI. El primer run automático validó correctamente:
+PR #14 validó en entorno automatizado con `fake-indexeddb`:
 
 - abrir/cerrar/reabrir datos;
 - rollback atómico ante error;
@@ -56,7 +58,14 @@ PR #14 implementa el primer adaptador y CI. El primer run automático validó co
 - backup/restauración repetida sin duplicados;
 - typecheck y build.
 
-Esto valida la base lógica local en entorno de pruebas con `fake-indexeddb`. **No valida todavía el runtime Android real ni límites de comprobantes.**
+PR #17 valida en CI:
+
+- generación del proyecto Android con Capacitor;
+- sincronización de assets web;
+- build Gradle `assembleDebug`;
+- creación de APK debug como artefacto.
+
+El build Android exitoso **no equivale todavía a validación de persistencia en WebView**.
 
 ## Dependencias del spike
 
@@ -73,7 +82,7 @@ Falta `package-lock.json`; se considera pendiente de reproducibilidad antes de r
 
 ## Validaciones restantes de Checkpoint 3
 
-- runtime Android/Capacitor;
+- ejecución Android WebView y persistencia real tras reapertura;
 - comprobantes binarios y límites;
 - cleanup y recuperación ante fallos;
 - backup entre instalaciones reales;

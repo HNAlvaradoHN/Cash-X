@@ -6,21 +6,19 @@ Cash-X es una aplicación genérica de libro de caja para registrar ingresos, eg
 
 - Versión estable: ninguna todavía.
 - Desarrollo: pre-0.1.
-- Rama principal: `main`.
 - Contrato funcional y modelo de dominio: definidos.
-- Persistencia local: primer spike Dexie/IndexedDB implementado y validado por CI en PR #14.
-- Android nativo/Capacitor en dispositivo: pendiente de validación práctica.
+- Persistencia local Dexie/IndexedDB: primer spike validado.
+- Android/Capacitor: generación y APK debug validados en CI; ejecución WebView todavía pendiente.
 - Sincronización Google Drive: arquitectura definida, implementación pendiente.
 - UI final: no iniciada.
 
 ## Principios del producto
 
-- Offline-first: registrar y consultar sin depender de internet.
+- Offline-first.
 - Datos privados fuera del repositorio público.
 - Interfaz desacoplada de lógica financiera, persistencia y sincronización.
 - Cambios pequeños, comprobables y reversibles.
 - Costos iniciales mínimos y sin servicios facturables sin aprobación.
-- Sin código legacy, archivos temporales ni dependencias innecesarias.
 
 ## Tecnología actual
 
@@ -29,7 +27,7 @@ Cash-X es una aplicación genérica de libro de caja para registrar ingresos, eg
 - Capacitor como estrategia Android.
 - Google Drive como única nube opcional inicial para sincronización, sin backend propio de Cash-X.
 
-Las dependencias directas están fijadas a versiones exactas. Falta incorporar `package-lock.json` antes de considerar la base reproducible para release.
+La configuración de Capacitor usa `capacitor.config.json` para evitar incompatibilidades entre el loader TypeScript de Capacitor 8.5.2 y TypeScript 7.0.2. Las dependencias directas están fijadas a versiones exactas; falta incorporar `package-lock.json` antes de considerar la base reproducible para release.
 
 ## Comandos del spike
 
