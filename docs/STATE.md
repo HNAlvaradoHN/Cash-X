@@ -11,9 +11,10 @@
 - Versión estable: ninguna.
 - Versión en desarrollo: pre-0.1.
 - PR #14 `spike(persistence): validate local Dexie foundation`: integrado.
-- Issue #11 `Checkpoint 3 spike: validate local persistence foundation`: cerrado como completado por PR #14.
-- PR activo después de integrar PR #14: ninguno.
-- Issues #12 y #13 fueron creados accidentalmente por tooling y quedaron cerrados como `not_planned`; no contienen trabajo de proyecto.
+- PR #15 `docs(state): close local persistence spike`: integrado.
+- PR activo: #17 `ci(android): validate generated Capacitor build`.
+- Issue #16 asociado al spike Android permanece abierto hasta integrar PR #17.
+- Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
 
@@ -29,48 +30,44 @@ Continúan aprobadas las reglas de libros independientes, ingreso/egreso, catego
 
 **Formalización lógica completada.**
 
-### Persistencia local — primer tramo del spike
+### Persistencia local — primer tramo
 
 **Completado e integrado en `main`.**
 
-Se añadió:
+PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esquema, Papelera/restauración, backup/restauración idempotente y CI. Sus pruebas cubren reapertura, rollback atómico, Papelera/restauración, migración y restauración repetida sin duplicados.
 
-- scaffold mínimo TypeScript + Vite;
-- Dexie/IndexedDB como adaptador local inicial;
-- esquema v1→v2 con migración;
-- operaciones de Papelera/restauración;
-- backup/restauración versionado e idempotente;
-- configuración base de Capacitor;
-- CI de aplicación.
+### Android — segundo tramo
 
-Validaciones automáticas del PR #14: instalación, typecheck, 5 pruebas de persistencia y build, todas correctas.
+**Generación y build debug validados en CI; runtime WebView todavía pendiente.**
 
-Las pruebas cubren:
+PR #17 amplía CI para:
 
-- persistencia tras cerrar/reabrir;
-- rollback de transacción fallida;
-- Papelera y restauración;
-- migración de esquema sin perder libro;
-- restauración repetida del mismo backup sin duplicados.
+- generar `android/` temporalmente con Capacitor;
+- sincronizar los assets web;
+- compilar `assembleDebug` con JDK 21;
+- producir y subir un APK debug como artefacto temporal.
+
+El primer intento detectó una incompatibilidad real: Capacitor no pudo cargar `capacitor.config.ts` con TypeScript 7.0.2 en Node 22.12.0. Se corrigió la causa usando `capacitor.config.json`, evitando depender del loader TypeScript de Capacitor. Tras el cambio, `verify` y `android-build` terminaron correctamente, incluyendo generación Android, `cap sync`, Gradle y artefacto APK.
+
+Esto valida el **build Android**, no la ejecución en un emulador/teléfono ni IndexedDB dentro de WebView.
 
 ### Pendiente del spike
 
-- generar y validar runtime Android real con Capacitor;
-- validar IndexedDB/Dexie dentro del WebView Android;
+- ejecutar Cash-X dentro de WebView Android real/emulado y validar persistencia/reapertura;
 - probar comprobantes binarios y límites reales;
-- probar cleanup y recuperación ante fallos de escritura/migración más agresivos;
+- probar cleanup y recuperación ante fallos más agresivos;
 - generar `package-lock.json` para instalaciones reproducibles;
 - implementar y probar Google OAuth/Drive;
 - probar dos instalaciones, offline/reconexión, idempotencia y conflictos.
 
 ## CI
 
-Cash-X ya tiene CI propio en `.github/workflows/ci.yml`. El PR #14 pasó instalación, typecheck, tests y build antes de integrarse.
+Cash-X tiene CI propio. En PR #17 pasan tanto el job web (`typecheck`, tests, build) como el job Android (generación Capacitor, sync, Gradle `assembleDebug`, artefacto APK).
 
 ## Trabajo paralelo
 
-No hay PR funcional abierto ni trabajo paralelo identificado.
+No hay otro PR funcional abierto identificado.
 
 ## Siguiente paso exacto
 
-**Completar el segundo tramo del spike: generar/validar Capacitor Android y comprobar persistencia real en WebView. Después, añadir el adaptador mínimo de Google Drive. No construir dashboard todavía.**
+**Integrar PR #17 con CI verde y después validar persistencia real de Dexie/IndexedDB dentro de WebView Android mediante emulador o dispositivo. No construir dashboard todavía.**
