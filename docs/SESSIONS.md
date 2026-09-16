@@ -56,6 +56,7 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - Se prioriza acceso limitado de Drive (`appDataFolder`/archivos de la aplicación) en lugar de acceso amplio al Drive del usuario.
 - TeraBox queda como proveedor futuro solamente si existe API oficial adecuada y una necesidad aprobada.
 - `AttachmentStore` separa los comprobantes del motor concreto de almacenamiento; el primer adaptador usa `Blob` en IndexedDB y puede sustituirse por OPFS/filesystem nativo si las pruebas lo exigen.
+- El backup externo inicial usa un único archivo `.cashx` versionado con manifiesto JSON, bytes binarios crudos e integridad SHA-256. v1 no cifra el contenido.
 
 #### Validaciones técnicas completadas en Checkpoint 3
 
@@ -67,18 +68,20 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - PR #21 `docs(state): record Android WebView persistence validation`: integrado.
 - PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado. Añadió `AttachmentStore`/`DexieAttachmentStore` y validó comprobantes `Blob`, varios adjuntos, integridad de bytes/metadatos, rechazo de huérfanos, rollback de lote, Papelera/restauración, purge y persistencia binaria tras reapertura también en Android WebView emulado.
 - El primer intento del test de comprobantes detectó una incompatibilidad de tipos de TypeScript 7 entre `Uint8Array<ArrayBufferLike>` y `BlobPart`; se corrigió creando el `Blob` desde un `ArrayBuffer` explícito y la validación posterior quedó verde.
+- PR #25 `chore(ci): make dependency installation reproducible`: integrado. Añadió `package-lock.json` y migró CI a `npm ci`.
+- PR #27 `feat(backup): validate external binary backup format`: integrado al cerrar este tramo. Añadió el contenedor `.cashx`, validación SHA-256, prueba source→archivo→segunda instalación, restauración idempotente y rechazo de corrupción/truncamiento sin nuevas dependencias de producción.
 
 #### Estado actual de la sesión
 
 - Ya existe código técnico Cash-X, aunque todavía no una UI de producto utilizable.
-- Existe CI propio con typecheck, tests, build web, build Android debug y prueba runtime en emulador.
-- Persistencia estructurada y primer almacenamiento local de comprobantes están validados en el alcance actual.
-- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, backup externo binario, sincronización Drive, validaciones físicas y release.
-- Siguiente paso real: versionar `package-lock.json`, cambiar CI a instalación reproducible con `npm ci`, después definir/probar backup externo con binarios y continuar con Google Drive.
+- Existe CI propio con `npm ci`, typecheck, tests, build web, build Android debug y prueba runtime en emulador.
+- Persistencia estructurada, comprobantes locales y backup externo entre instalaciones de prueba están validados en el alcance actual.
+- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, sincronización Drive, validaciones físicas y release.
+- Siguiente paso real: implementar el adaptador mínimo de Google Drive con OAuth y permisos mínimos, guardar/leer un `.cashx` en `appDataFolder` y demostrar recuperación desde una segunda instalación autorizada sin backend propio.
 - Estado de la sesión: activa.
 
 ## Regla para la próxima sesión
 
 La próxima sesión solo podrá anunciar `Ing. Cash-X #2 💵` después de verificar este archivo, revisar el estado real del repositorio y registrar #2 en el repositorio.
 
-Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PERSISTENCE.md`, `docs/SYNC.md` y este archivo sin depender de la conversación anterior.
+Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PERSISTENCE.md`, `docs/BACKUP.md`, `docs/SYNC.md` y este archivo sin depender de la conversación anterior.
