@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** persistencia local estructurada, build Android, reapertura WebView y primer adaptador de comprobantes `Blob` validados; reproducibilidad/backup/Drive pendientes
+**Estado:** persistencia local estructurada, build Android, reapertura WebView, comprobantes `Blob` y reproducibilidad de dependencias validados; backup/Drive pendientes
 
 ## Objetivo
 
@@ -52,6 +52,16 @@ El APK/AAB reutiliza la misma aplicación mediante Capacitor. Ya están validado
 La validación actual corresponde a un emulador Android API 35; un dispositivo físico sigue pendiente antes de una entrega real.
 
 La configuración de Capacitor se mantiene en `capacitor.config.json`. Se eligió JSON después de comprobar que el loader de `capacitor.config.ts` de Capacitor 8.5.2 no es compatible con TypeScript 7.0.2 bajo el Node 22.12 usado por el proyecto. El cambio evita flags experimentales y reduce acoplamiento de herramientas.
+
+## Reproducibilidad de instalación
+
+PR #25 versionó `package-lock.json` generado con Node 22.12.0 y cambió los jobs de CI a `npm ci`. Las versiones directas continúan fijadas en `package.json` y el lockfile fija el árbol transitivo exacto de esa revisión.
+
+Regla operativa:
+
+- cambios intencionales de dependencias deben actualizar `package.json` y `package-lock.json` juntos;
+- CI usa `npm ci` y debe fallar si ambos archivos dejan de ser coherentes;
+- no se actualizan dependencias oportunísticamente dentro de trabajo no relacionado.
 
 ## Backup binario
 
@@ -107,6 +117,8 @@ PR #20 validó en un emulador Android API 35:
 
 PR #23 amplió esa evidencia a comprobantes binarios y validó `AttachmentStore`/`DexieAttachmentStore`, `Blob`, rollback de lote, Papelera/restauración, purge y persistencia de bytes en Android WebView.
 
+PR #25 añadió `package-lock.json` y validó la instalación reproducible con `npm ci` sin romper typecheck, tests, build web ni el pipeline Android.
+
 ## Dependencias del spike
 
 Versiones directas fijadas tras revisión de mantenimiento/licencia/compatibilidad:
@@ -118,11 +130,10 @@ Versiones directas fijadas tras revisión de mantenimiento/licencia/compatibilid
 - Vitest 5.0.1 — MIT;
 - fake-indexeddb 6.2.5 — Apache-2.0, solo pruebas.
 
-Falta `package-lock.json`; se considera pendiente de reproducibilidad antes de release.
+El árbol transitivo queda fijado por `package-lock.json` y CI usa `npm ci`.
 
 ## Validaciones restantes de Checkpoint 3
 
-- `package-lock.json` e instalación reproducible con `npm ci`;
 - formato de backup externo que incluya binarios;
 - backup/restauración entre instalaciones reales/de prueba;
 - límites/cuotas y fallos agresivos de almacenamiento en dispositivo;

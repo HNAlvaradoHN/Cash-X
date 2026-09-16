@@ -10,8 +10,8 @@
 
 ## KI-002 — CI de Cash-X
 
-- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20 y PR #23.
-- Resultado: CI ejecuta instalación, typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye ahora un comprobante `Blob` y valida sus bytes después del segundo arranque.
+- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23 y PR #25.
+- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque.
 
 ## KI-003 — Nombres de ramas legacy todavía visibles
 
@@ -22,11 +22,8 @@
 
 ## KI-004 — Falta `package-lock.json`
 
-- Síntoma: `npm install` resuelve dependencias transitivas sin un lockfile versionado.
-- Impacto: CI valida el spike, pero la instalación todavía no es suficientemente reproducible para release.
-- Workaround: dependencias directas fijadas a versiones exactas.
-- Prioridad: media antes de cualquier release.
-- Estado: abierto; siguiente paso de Checkpoint 3.
+- Estado: resuelto por PR #25.
+- Resultado: `package-lock.json` está versionado y CI instala con `npm ci`, fijando también dependencias transitivas para la revisión correspondiente.
 
 ## KI-005 — Persistencia dentro de Android WebView
 
@@ -48,7 +45,7 @@
 - Riesgo: un `Blob` no debe asumirse serializable a JSON como contenido binario.
 - Impacto: backup manual entre instalaciones y Google Drive no se consideran terminados todavía.
 - Prioridad: alta dentro de Checkpoint 3 antes de sincronización real.
-- Estado: abierto.
+- Estado: abierto; siguiente paso exacto después de PR #25.
 
 ## Nota de seguridad sobre historial anterior
 
