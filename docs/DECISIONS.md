@@ -82,3 +82,51 @@
 **Motivo:** cubrir el uso real de caja con protección contra pérdida accidental y sin complejidad prematura.
 
 **Consecuencias:** la implementación debe respetar `docs/PRODUCT_SPEC.md` antes de elegir persistencia o construir dashboard.
+
+## DEC-008 — Refinamientos de dominio e interacción para Checkpoint 3
+
+**Fecha:** 2026-09-16
+
+**Decisión:** se aprueban las siguientes reglas de producto y dominio antes de elegir persistencia:
+
+- la interfaz usa `+ Ingreso` y `− Egreso`; `movimiento` queda como término técnico interno cuando haga falta;
+- nombre y moneda son obligatorios por libro; saldo inicial, icono y color son opcionales;
+- el libro puede archivarse sin pérdida de datos;
+- el usuario elige un color principal y Cash-X genera una tonalidad secundaria;
+- los iconos se eligen desde catálogo integrado o emoji en v0.1;
+- el formulario exige monto, descripción breve, categoría y fecha; nota, referencia/persona y comprobantes quedan bajo `Más detalles`;
+- la hora de creación/modificación se guarda automáticamente y no se pide como campo normal al usuario;
+- cada libro puede definir un campo adicional opcional con nombre y opciones personalizadas; si no existe, no aparece en ninguna pantalla o reporte;
+- toda variable visual debe estar acotada en vistas previas para no romper el diseño; el detalle muestra el contenido completo;
+- todo saldo derivado se recalcula automáticamente tras cambios de monto, tipo, fecha, saldo inicial, eliminación o restauración;
+- toda acción destructiva iniciada por el usuario pide confirmación;
+- la Papelera conserva elementos hasta 30 días, permite restaurar y luego puede limpiar automáticamente;
+- eliminar un libro envía a Papelera la unidad completa con sus datos relacionados;
+- categorías y opciones históricamente usadas pueden retirarse de uso sin romper registros anteriores: dejan de ofrecerse para nuevos registros y el historial conserva su valor;
+- si un campo existe pero un registro no tiene valor, las vistas tabulares/reportes pueden mostrar `—` para distinguir vacío de ausencia del campo.
+
+**Motivo:** proteger integridad histórica, reducir fricción en captura de datos y evitar que decisiones visuales fuercen una arquitectura incorrecta.
+
+**Consecuencias:** la persistencia debe soportar referencias históricas, borrado lógico/retención, restauración de agregados completos y recálculo determinista del saldo.
+
+## DEC-009 — Dirección funcional de reportes detallados
+
+**Fecha:** 2026-09-16
+
+**Decisión:** cada reporte v0.1 corresponde a un solo libro y debe permitir reconstruir las cuentas del periodo.
+
+**Detalles aprobados:**
+
+- periodos visibles: semana, mes, año y rango personalizado;
+- resumen superior con saldo inicial del periodo, ingresos, egresos, saldo final y cantidad de registros;
+- detalle cronológico combinado con saldo acumulado después de cada registro;
+- el saldo de apertura de un periodo se calcula usando todo el historial activo anterior;
+- resumen por categorías al final;
+- campo adicional solo aparece si fue configurado para ese libro;
+- `Incluir comprobantes` activado por defecto al generar PDF;
+- el PDF debe mantenerse limpio y evitar anexar fotografías gigantes como páginas finales;
+- se evaluará adjuntar/integrar comprobantes al PDF y se probará compatibilidad real entre lectores antes de prometer ese comportamiento.
+
+**Motivo:** facilitar revisión y auditoría sin sacrificar legibilidad.
+
+**Consecuencias:** la implementación de reportes se mantiene para un checkpoint posterior; primero se construirá y probará el núcleo financiero.
