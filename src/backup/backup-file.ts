@@ -116,7 +116,10 @@ function parseBook(value: unknown, index: number): BookRow {
     id: requireString(row.id, `books[${index}].id`),
     name: requireString(row.name, `books[${index}].name`),
     currency: requireString(row.currency, `books[${index}].currency`),
-    initialBalanceMinor: requireSafeInteger(row.initialBalanceMinor, `books[${index}].initialBalanceMinor`),
+    initialBalanceMinor: requireSafeInteger(
+      row.initialBalanceMinor,
+      `books[${index}].initialBalanceMinor`,
+    ),
     status,
     createdAt: requireTimestamp(row.createdAt, `books[${index}].createdAt`),
     updatedAt: requireTimestamp(row.updatedAt, `books[${index}].updatedAt`),
@@ -192,7 +195,10 @@ function parseAttachmentManifest(value: unknown, index: number): BackupAttachmen
     deletedAt: requireNullableTimestamp(row.deletedAt, `attachments[${index}].deletedAt`),
     offset: requireSafeInteger(row.offset, `attachments[${index}].offset`, 0),
     length: requireSafeInteger(row.length, `attachments[${index}].length`, 0),
-    contentSha256: requireString(row.contentSha256, `attachments[${index}].contentSha256`).toLowerCase(),
+    contentSha256: requireString(
+      row.contentSha256,
+      `attachments[${index}].contentSha256`,
+    ).toLowerCase(),
   };
 }
 
@@ -246,13 +252,14 @@ function bytesEqual(left: Uint8Array, right: Uint8Array): boolean {
   if (left.byteLength !== right.byteLength) return false;
   let difference = 0;
   for (let index = 0; index < left.byteLength; index += 1) {
-    difference |= left[index] ^ right[index];
+    difference |= left[index]! ^ right[index]!;
   }
   return difference === 0;
 }
 
 async function sha256Bytes(input: Blob | Uint8Array): Promise<Uint8Array> {
-  const bytes = input instanceof Blob ? new Uint8Array(await input.arrayBuffer()) : Uint8Array.from(input);
+  const bytes =
+    input instanceof Blob ? new Uint8Array(await input.arrayBuffer()) : Uint8Array.from(input);
   return new Uint8Array(await crypto.subtle.digest('SHA-256', bytes.buffer));
 }
 
