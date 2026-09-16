@@ -59,3 +59,26 @@
 **Decisión:** que el repositorio sea público no implica conceder una licencia open source. No se añadirá una licencia hasta que el propietario decida cuál desea.
 
 **Consecuencias:** no inventar ni agregar una licencia por defecto.
+
+## DEC-007 — Contrato funcional v0.1
+
+**Fecha:** 2026-09-16
+
+**Decisión:** el núcleo funcional v0.1 queda definido por libros independientes, movimientos de ingreso/egreso, categorías configurables, saldo calculado, historial, búsqueda/filtros, Papelera, comprobantes opcionales múltiples, reportes básicos, operación offline y respaldo local manual.
+
+**Detalles aprobados:**
+
+- saldo inicial permitido pero opcional; si no se define, vale cero;
+- modificar saldo inicial con movimientos existentes debe advertir el impacto sobre saldos históricos;
+- la eliminación normal usa Papelera y permite restaurar;
+- un movimiento enviado a Papelera deja de contar en el saldo activo;
+- borrado definitivo requiere confirmación explícita;
+- cada movimiento puede tener cero, uno o varios comprobantes;
+- los comprobantes no son obligatorios;
+- una moneda por libro en v0.1;
+- no habrá login ni nube obligatorios;
+- sincronización multiusuario, bancos, inventario, IA y contabilidad avanzada quedan fuera de v0.1.
+
+**Motivo:** cubrir el uso real de caja con protección contra pérdida accidental y sin complejidad prematura.
+
+**Consecuencias:** la implementación debe respetar `docs/PRODUCT_SPEC.md` antes de elegir persistencia o construir dashboard.
