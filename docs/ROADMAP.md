@@ -19,7 +19,7 @@ Resultado aprobado:
 - saldo inicial opcional;
 - categorías configurables;
 - cálculo de saldo en dominio;
-- edición de movimientos;
+- edición de registros;
 - Papelera con restauración y borrado definitivo confirmado;
 - fechas, ordenamiento, búsqueda y filtros;
 - comprobantes opcionales múltiples;
@@ -48,14 +48,21 @@ Ya definidos/refinados:
 - límites de contenido variable en previews;
 - calculadora integrada para monto con precisión financiera;
 - modelo lógico formalizado en `docs/DOMAIN_MODEL.md`;
-- representación exacta de dinero, fechas, identificadores, referencias históricas, comprobantes y contratos de dominio.
+- representación exacta de dinero, fechas, identificadores, referencias históricas, comprobantes y contratos de dominio;
+- estrategia de plataforma: una base TypeScript + Vite, PWA y Android mediante Capacitor;
+- persistencia v0.1: IndexedDB mediante Dexie en PWA y Android, detrás de contratos de repositorio;
+- comprobantes detrás de `AttachmentStore`, con adaptador inicial simple y posibilidad de cambiar a OPFS/sistema de archivos nativo si las pruebas lo justifican;
+- PWA y APK tratados como instalaciones separadas, con backup/restauración como vía inicial de traslado de datos.
 
-Pendiente antes de programar UI:
+Siguiente trabajo dentro del checkpoint:
 
-1. **comparar y decidir almacenamiento local** con criterios de integridad, transacciones, migración, backup, archivos adjuntos, compatibilidad PWA/Android, mantenimiento y costo;
-2. implementar libros, categorías, campo adicional, ingresos/egresos, Papelera y cálculo de saldos sin depender de la UI;
-3. añadir pruebas del dominio para dinero, saldo, edición, fechas, eliminación/restauración, referencias históricas y validaciones;
-4. validar migraciones, recuperación básica y cleanup de comprobantes.
+1. implementar un spike mínimo de persistencia con Dexie y Capacitor;
+2. validar creación/apertura offline, transacciones, migraciones y recuperación ante fallos;
+3. validar Papelera/restauración y cleanup;
+4. validar comprobantes de prueba y límites;
+5. validar backup/restauración entre instalaciones de prueba;
+6. si el spike pasa, implementar el núcleo financiero independiente de UI;
+7. añadir pruebas del dominio para dinero, saldo, edición, fechas, eliminación/restauración, referencias históricas y validaciones.
 
 La UI será mínima y no definirá la arquitectura.
 
@@ -67,15 +74,15 @@ Validar accesibilidad y que cambiar el dashboard no afecte dominio/persistencia.
 
 ## Checkpoint 5 — PWA offline
 
-Configurar instalación PWA, caché de recursos y comportamiento sin red sin comprometer datos privados.
+Completar instalación PWA, caché de recursos, solicitud/verificación de almacenamiento persistente y comportamiento sin red sin comprometer datos privados.
 
 ## Checkpoint 6 — Android y CI
 
-Elegir y justificar la estrategia de empaquetado Android. Configurar build reproducible en CI público sin subir claves de firma ni datos privados.
+Materializar la estrategia ya elegida con Capacitor: proyecto Android, APK/AAB reproducible y acceso a capacidades nativas necesarias. Configurar CI público sin subir claves de firma ni datos privados.
 
 ## Checkpoint 7 — Reportes, exportación y backup
 
-Añadir exportaciones PDF/CSV/Excel y un formato de respaldo/restauración versionado y validado.
+Añadir exportaciones PDF/CSV/Excel y completar un formato de respaldo/restauración versionado y validado.
 
 Dirección funcional ya acordada para PDF:
 

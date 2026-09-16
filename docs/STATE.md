@@ -16,6 +16,8 @@
 - PR #5 `docs(rules): add visual explanation rule`: integrado.
 - PR #6 `docs(product): persist checkpoint 3 domain rules`: integrado.
 - PR #7 `docs(product): define amount calculator behavior`: integrado.
+- PR #8 `docs(domain): formalize core model contracts`: integrado.
+- PR #9 `docs(architecture): choose unified PWA Android persistence`: decisión de persistencia/plataforma de v0.1.
 
 ## Versiones
 
@@ -23,6 +25,7 @@
 - Versión en desarrollo: pre-0.1.
 - Contrato funcional v0.1: definido y refinado durante Checkpoint 3.
 - Modelo lógico de dominio: formalizado en `docs/DOMAIN_MODEL.md`.
+- Estrategia de persistencia/plataforma v0.1: definida en `docs/PERSISTENCE.md`.
 - Código de aplicación Cash-X: aún no iniciado.
 - Último punto estable de aplicación: no existe todavía.
 - Despliegue estable: ninguno.
@@ -30,7 +33,7 @@
 
 ## Estado funcional
 
-El comportamiento de producto aprobado está registrado en `docs/PRODUCT_SPEC.md`, las decisiones relevantes en `docs/DECISIONS.md` y el modelo técnico lógico en `docs/DOMAIN_MODEL.md`.
+El comportamiento de producto aprobado está registrado en `docs/PRODUCT_SPEC.md`, las decisiones relevantes en `docs/DECISIONS.md`, el modelo técnico lógico en `docs/DOMAIN_MODEL.md` y la estrategia de persistencia/plataforma en `docs/PERSISTENCE.md`.
 
 El núcleo incluye libros independientes, ingresos/egresos, categorías configurables, campo adicional opcional por libro, saldo inicial opcional, cálculo automático de saldo, historial, búsqueda/filtros, Papelera con retención de 30 días, varios comprobantes opcionales, reportes detallados posteriores, funcionamiento offline y respaldo local manual.
 
@@ -82,30 +85,37 @@ Contrato base detallado: `docs/PRODUCT_SPEC.md`.
 
 **Formalización lógica completada.**
 
-`docs/DOMAIN_MODEL.md` define:
+`docs/DOMAIN_MODEL.md` define entidades, dinero exacto, fechas, orden determinista, referencias históricas, Papelera, comprobantes, saldos derivados, contratos e invariantes.
 
-- entidades Libro, Registro financiero, Categoría, Campo adicional/Opciones y Comprobante;
-- dinero exacto en unidades menores, portable entre persistencias;
-- fecha de negocio separada de timestamps técnicos;
-- orden histórico determinista;
-- referencias/fallbacks para conservar historial tras purgas;
-- Papelera como estado lógico con retención de 30 días;
-- eliminación/restauración de libros como agregados;
-- saldos derivados como fuente de verdad reconstruible;
-- contratos de casos de uso e invariantes que deben probarse.
+### Persistencia y plataforma
+
+**Decisión arquitectónica completada; falta validación práctica.**
+
+Para v0.1:
+
+- una sola base de código TypeScript + Vite;
+- PWA como aplicación web instalable;
+- Android mediante Capacitor, sin reescribir dominio/UI en Kotlin;
+- IndexedDB mediante Dexie como almacenamiento estructurado tanto en PWA como en el runtime Android;
+- acceso a datos únicamente mediante contratos de repositorio;
+- comprobantes detrás de una abstracción separada `AttachmentStore`;
+- PWA y APK son instalaciones separadas; el traslado inicial de datos será mediante backup/restauración versionado;
+- SQLite queda como opción futura solo si pruebas reales justifican una migración.
 
 Pendiente antes de programar UI:
 
-1. comparar y decidir persistencia local con criterios de integridad, migración, backup, archivos adjuntos y compatibilidad PWA/Android;
-2. implementar el núcleo financiero independiente de UI sobre contratos de persistencia;
-3. añadir pruebas de dinero, saldo, edición, fechas, Papelera, restauración, referencias históricas y validaciones;
-4. validar migraciones, recuperación y cleanup de archivos.
+1. ejecutar un spike real Dexie + Capacitor;
+2. validar migraciones, transacciones, recuperación ante fallos, Papelera/restauración y cleanup;
+3. validar comprobantes y límites de tamaño;
+4. validar backup/restauración entre instalaciones de prueba;
+5. implementar el núcleo financiero independiente de UI si el spike pasa;
+6. añadir pruebas del dominio y persistencia.
 
 ## CI
 
 Cash-X todavía no tiene CI de aplicación porque aún no existe código que compilar o probar. Los runs históricos pertenecen al proyecto anterior y no representan el estado de Cash-X.
 
-Los cambios actuales son únicamente de documentación/contrato, por lo que todavía no existe una validación de build de aplicación aplicable.
+Los cambios actuales siguen siendo de documentación/arquitectura; no existe todavía una validación de build de aplicación aplicable.
 
 ## Trabajo paralelo
 
@@ -113,4 +123,4 @@ No hay trabajo funcional Cash-X pendiente de integrar.
 
 ## Siguiente paso exacto
 
-**Continuar Checkpoint 3 comparando opciones concretas de persistencia local para PWA + Android. La decisión debe cubrir integridad, transacciones, migraciones, backup/restauración, archivos/comprobantes, compatibilidad, mantenimiento y costo antes de escribir el núcleo financiero.**
+**Continuar Checkpoint 3 implementando un spike mínimo de Dexie/IndexedDB + Capacitor. No construir dashboard todavía. El spike debe validar persistencia offline, transacciones, migraciones, recuperación, comprobantes y backup/restauración antes de empezar el núcleo financiero.**
