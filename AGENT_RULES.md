@@ -152,3 +152,17 @@ Orden permanente:
 9. velocidad de desarrollo.
 
 Aplicar siempre: necesidad actual > diseño limpio > extensibilidad razonable > especulación futura.
+
+## 17. Explicación visual y decisiones de producto
+
+Cuando se definan funciones, pantallas, flujos o decisiones de UX con el propietario del proyecto:
+
+- explicar una decisión o un grupo pequeño de decisiones a la vez; no descargar todo el diseño de golpe;
+- usar lenguaje simple y separar claramente lo que verá el usuario de los nombres técnicos internos;
+- cuando ayude a entender, incluir wireframes en texto/ASCII, ejemplos de formularios, tarjetas, botones o recorridos de pantalla sin necesidad de generar una imagen;
+- mostrar primero cómo se vería o usaría la opción y después explicar la lógica técnica relevante;
+- si hay alternativas reales, presentar pocas opciones claras con sus diferencias y recomendar una sin ocultar las demás;
+- no avanzar a la siguiente decisión importante hasta que la actual quede entendida y aceptada, salvo que el propietario pida avanzar más rápido;
+- mantener estas explicaciones visuales desacopladas de la implementación final: un wireframe de conversación orienta UX, pero no obliga a acoplar dominio, persistencia o servicios al diseño mostrado.
+
+Esta regla aplica especialmente durante definición de producto y UI de Cash-X.
