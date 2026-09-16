@@ -114,8 +114,29 @@ jobs:
             -no-snapshot \
             -gpu swiftshader_indirect \
             > /tmp/cashx-emulator.log 2>&1 &
+          emulator_pid=$!
 
-          adb wait-for-device
+          device_ready=""
+          for _ in $(seq 1 60); do
+            if ! kill -0 "$emulator_pid" 2>/dev/null; then
+              echo "Android emulator process exited before ADB became available."
+              cat /tmp/cashx-emulator.log
+              exit 1
+            fi
+
+            if adb devices | grep -q '^emulator-.*device$'; then
+              device_ready="1"
+              break
+            fi
+            sleep 2
+          done
+
+          if [ "$device_ready" != "1" ]; then
+            echo "Android emulator did not become visible to ADB."
+            cat /tmp/cashx-emulator.log
+            exit 1
+          fi
+
           boot_completed=""
           for _ in $(seq 1 120); do
             boot_completed="$(adb shell getprop sys.boot_completed | tr -d '\r')"
@@ -126,6 +147,7 @@ jobs:
           done
 
           if [ "$boot_completed" != "1" ]; then
+            echo "Android emulator did not finish booting."
             cat /tmp/cashx-emulator.log
             exit 1
           fi
