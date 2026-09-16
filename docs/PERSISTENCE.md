@@ -63,15 +63,40 @@ Capacitor se usa también como puerta de acceso a funciones nativas cuando corre
 
 ## PWA y APK son instalaciones separadas
 
-Los datos de una PWA instalada en el navegador no se transfieren automáticamente al APK, porque cada instalación posee su propio almacenamiento local.
+Los datos de una PWA instalada en el navegador no se comparten automáticamente con el APK porque cada instalación posee su propio almacenamiento local.
 
-La estrategia v0.1 para pasar datos entre ambas será:
+Cash-X mantiene dos mecanismos compatibles:
 
-1. exportar un respaldo versionado desde la instalación de origen;
-2. importar y validar ese respaldo en la instalación destino;
-3. no duplicar ni reinterpretar registros durante la restauración.
+1. **sin Google Drive:** traslado manual mediante respaldo/restauración versionado;
+2. **con Google Drive conectado:** sincronización opcional entre las copias locales de los dispositivos mediante la cuenta de Drive del usuario.
 
-No se requiere nube ni cuenta de usuario para este proceso.
+Google Drive no reemplaza la base local. Cada instalación conserva sus datos en Dexie/IndexedDB para poder seguir funcionando offline.
+
+La arquitectura completa de sincronización está definida en `docs/SYNC.md`.
+
+## Sincronización opcional con Google Drive
+
+Cash-X no tendrá backend propio para sincronización y no dependerá de Supabase, Firebase, Cloudflare ni un servicio equivalente.
+
+La sincronización inicial usa Google Drive como único proveedor cloud y se implementa detrás de `CloudSyncProvider`.
+
+Reglas principales:
+
+- sin Drive conectado, Cash-X funciona completamente local;
+- al conectar Drive, Google OAuth autentica/autoriza la cuenta y Cash-X sincroniza con esa cuenta;
+- no existe cuenta o contraseña propia de Cash-X para esta función;
+- no se implementa correo + PIN propio porque enviar/verificar ese código requeriría un servicio externo confiable;
+- la sincronización interna usa permisos mínimos, priorizando `drive.appdata`;
+- respaldos/exportaciones visibles creados por Cash-X pueden usar `drive.file`;
+- no se solicita acceso amplio a todo el Drive del usuario;
+- cambios concurrentes del mismo registro nunca se sobrescriben silenciosamente;
+- la sincronización debe ser idempotente y recuperable ante red interrumpida;
+- desconectar Drive no borra los datos locales;
+- borrar datos remotos es una acción separada y destructiva con confirmación.
+
+La PWA sin backend no promete sincronización continua mientras el navegador esté completamente cerrado. Debe sincronizar al abrir, tras cambios locales, al recuperar conexión y mediante una acción manual; si Google requiere renovar autorización, se solicitará de forma explícita sin comprometer la copia local.
+
+TeraBox queda detrás de la misma abstracción como proveedor posible futuro, pero no se implementa hasta validar su API oficial, OAuth, estabilidad, costos y garantías de integridad. No se usarán endpoints no oficiales para datos financieros.
 
 ## Por qué no SQLite desde el inicio
 
@@ -95,9 +120,17 @@ La decisión se revisará únicamente si aparece evidencia concreta, por ejemplo
 
 Si se cambia de motor, se implementará otro adaptador detrás de los contratos de persistencia y una migración explícita de datos; el dominio no se reescribe.
 
+## Costos externos
+
+Al momento de esta decisión, Google documenta el uso estándar de Drive API sin costo adicional dentro de sus cuotas estándar, con cambios de facturación previstos para uso que supere ciertos umbrales más adelante en 2026.
+
+Cash-X debe minimizar solicitudes y no habilitar cuotas pagadas, facturación adicional ni servicios billables sin aprobación explícita del propietario.
+
+El almacenamiento usado por los archivos de Cash-X consume la cuota normal de Google Drive de la cuenta del usuario.
+
 ## Validaciones obligatorias antes de considerar la persistencia lista
 
-El spike de persistencia debe demostrar como mínimo:
+El spike de persistencia/sincronización debe demostrar como mínimo:
 
 - crear y abrir la base offline;
 - migrar de una versión de esquema a otra sin perder datos;
@@ -108,10 +141,18 @@ El spike de persistencia debe demostrar como mínimo:
 - guardar, leer y eliminar comprobantes de prueba dentro de límites definidos;
 - exportar y restaurar un respaldo de prueba;
 - funcionamiento tanto en navegador/PWA como en Android mediante Capacitor;
-- recuperación limpia ante errores simulados de escritura/migración.
+- recuperación limpia ante errores simulados de escritura/migración;
+- modo local sin cuenta ni Drive;
+- conectar la misma cuenta de Drive desde dos instalaciones y converger sin duplicados;
+- trabajo offline en ambos dispositivos y sincronización posterior;
+- conflicto concurrente sobre el mismo registro sin pérdida silenciosa;
+- red interrumpida durante sincronización y reintento idempotente;
+- desconectar/reconectar Drive sin perder datos locales.
 
 ## Regla de arquitectura
 
 `UI -> casos de uso -> contratos de repositorio -> adaptador Dexie/IndexedDB`
 
-Los componentes visuales nunca acceden directamente a Dexie. Capacitor y APIs de navegador pertenecen a adaptadores de plataforma, no al dominio.
+`                                 -> SyncEngine -> CloudSyncProvider -> Google Drive`
+
+Los componentes visuales nunca acceden directamente a Dexie ni a Google Drive. Capacitor, APIs de navegador, OAuth y proveedores cloud pertenecen a adaptadores de plataforma, no al dominio.
