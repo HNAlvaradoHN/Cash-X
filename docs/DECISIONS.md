@@ -177,3 +177,32 @@
 **Motivo:** maximizar integridad, simplicidad y mantenibilidad con una sola implementación local mientras se conserva una salida limpia a SQLite futuro detrás de contratos de persistencia.
 
 **Consecuencias:** antes de implementar el núcleo financiero se hará un spike que valide migraciones, transacciones, Papelera/restauración, comprobantes, backup y ejecución real tanto en PWA como en Android mediante Capacitor. Detalles: `docs/PERSISTENCE.md`.
+
+## DEC-012 — Sincronización opcional mediante Google Drive, sin backend propio
+
+**Fecha:** 2026-09-16
+
+**Decisión:** Cash-X seguirá siendo local-first y funcionará completamente sin cuenta. Si el usuario conecta Google Drive, la misma base local se sincronizará opcionalmente entre dispositivos usando exclusivamente el almacenamiento de la cuenta de Google autorizada, sin Supabase, Firebase, Cloudflare ni backend propio de Cash-X.
+
+**Detalles:**
+
+- Google Drive será el único proveedor cloud implementado inicialmente;
+- Cash-X no tendrá cuenta, contraseña ni correo+PIN propios para esta sincronización;
+- el usuario conectará su cuenta de Google mediante OAuth y podrá usar la misma cuenta en teléfono, tablet, PWA o PC;
+- enviar un PIN propio por correo no se implementará porque requiere un servicio confiable de emisión/entrega/verificación que contradice la decisión de no operar backend propio;
+- la base Dexie/IndexedDB de cada dispositivo sigue siendo la fuente operativa local; Drive es transporte de sincronización y copia remota;
+- la sincronización interna usará mínimo privilegio, priorizando `drive.appdata`; los respaldos visibles creados por Cash-X podrán usar `drive.file`;
+- no se solicitará acceso amplio a todos los archivos del usuario;
+- el protocolo será idempotente, versionado y recuperable; los mismos cambios recibidos dos veces no duplican datos;
+- cambios independientes se fusionan automáticamente, pero dos ediciones concurrentes del mismo registro no se sobrescriben silenciosamente: se preserva el conflicto para resolución;
+- comprobantes se sincronizan mediante abstracciones separadas, con identificadores y hashes de integridad;
+- desconectar Drive conserva los datos locales y no borra automáticamente la copia remota;
+- la PWA sin backend no prometerá sincronización continua con el navegador completamente cerrado y puede requerir una acción de reautorización cuando Google expire la autorización web;
+- backup/restauración manual permanece como fallback y como modo de traslado cuando Drive no esté conectado;
+- TeraBox queda como proveedor futuro detrás de `CloudSyncProvider` y solo se añadirá si su API oficial, OAuth, estabilidad, costos y garantías cumplen los requisitos; no se usarán endpoints no oficiales para datos financieros.
+
+**Costos:** al momento de esta decisión Google documenta el uso estándar de Drive API sin costo adicional dentro de las cuotas estándar, con cambios de facturación previstos para uso por encima de ciertos umbrales más adelante en 2026. Cash-X no habilitará cuotas pagadas ni servicios billables sin aprobación explícita del propietario.
+
+**Motivo:** ofrecer continuidad real entre dispositivos usando una nube que ya pertenece al usuario, sin convertir Cash-X en un servicio SaaS ni introducir una infraestructura propia que aumente costo, superficie de ataque y mantenimiento.
+
+**Consecuencias:** el spike de Checkpoint 3 debe validar no solo Dexie/Capacitor, sino también sincronización Drive entre dos instalaciones, trabajo offline, convergencia, conflictos, interrupciones de red, reintentos idempotentes, comprobantes, desconexión/reconexión y backup fallback. Contrato detallado: `docs/SYNC.md`.
