@@ -25,18 +25,21 @@ Ya completado:
 - Google Drive opcional detrás de `CloudSyncProvider`, sin backend propio;
 - primer spike local con pruebas verdes de reapertura, atomicidad, Papelera/restauración, migración e importación idempotente;
 - CI propio;
-- generación de proyecto Android con Capacitor y compilación de APK debug en CI.
+- generación de proyecto Android con Capacitor y compilación de APK debug en CI;
+- persistencia real Dexie/IndexedDB validada en Android WebView emulado: escritura, cierre forzado, reapertura e integridad del mismo libro.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. ejecutar la app en Android WebView real/emulado y validar persistencia tras cierre/reapertura;
-2. probar comprobantes `Blob`, límites, cleanup y fallos de escritura;
-3. incorporar `package-lock.json` y usar instalación reproducible en CI;
+1. probar comprobantes `Blob`, límites, lectura, eliminación, cleanup y fallos de escritura;
+2. incorporar `package-lock.json` y usar instalación reproducible en CI;
+3. validar backup/restauración entre instalaciones de prueba;
 4. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
 5. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
 6. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
-7. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
-8. añadir pruebas del dominio financiero.
+7. validar desconexión/reconexión de Drive sin perder datos locales;
+8. realizar una prueba física Android antes de una entrega real;
+9. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
+10. añadir pruebas del dominio financiero.
 
 La UI final no se construye hasta cerrar las validaciones de persistencia necesarias.
 
@@ -50,7 +53,7 @@ Completar instalación PWA, caché de recursos, persistencia del navegador y exp
 
 ## Checkpoint 6 — Android y CI
 
-Materializar APK/AAB reproducible, capacidades nativas y validaciones Android. El build debug base ya se valida desde Checkpoint 3; aquí se completarán release, firma segura y capacidades nativas sin exponer claves.
+Materializar APK/AAB reproducible, capacidades nativas y validaciones Android. El build debug y la persistencia básica WebView ya se validan desde Checkpoint 3; aquí se completarán release, firma segura y capacidades nativas sin exponer claves.
 
 ## Checkpoint 7 — Reportes, exportación y backup
 

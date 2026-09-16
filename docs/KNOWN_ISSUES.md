@@ -10,8 +10,8 @@
 
 ## KI-002 — CI de Cash-X
 
-- Estado: resuelto en PR #14 y ampliado en PR #17.
-- Resultado: CI ejecuta instalación, typecheck, tests, build web y build Android debug.
+- Estado: resuelto en PR #14 y ampliado en PR #17 y PR #20.
+- Resultado: CI ejecuta instalación, typecheck, tests, build web, build Android debug y una prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado.
 
 ## KI-003 — Nombres de ramas legacy todavía visibles
 
@@ -28,13 +28,11 @@
 - Prioridad: media antes de cualquier release.
 - Estado: abierto.
 
-## KI-005 — Persistencia todavía no validada dentro de Android WebView
+## KI-005 — Persistencia dentro de Android WebView
 
-- Estado previo: la generación y compilación Android ya fueron validadas por PR #17.
-- Pendiente real: ejecutar la aplicación en emulador/dispositivo, escribir datos IndexedDB/Dexie, cerrar/reabrir y comprobar integridad.
-- Impacto: todavía no puede afirmarse que la misma persistencia está validada en runtime Android.
-- Prioridad: alta dentro de Checkpoint 3.
-- Estado: abierto; es el siguiente tramo.
+- Estado: resuelto en PR #20 para el escenario básico de persistencia.
+- Evidencia: un emulador Android API 35 escribió un libro mediante `CashXDatabase` + `LocalPersistence`, la aplicación fue cerrada forzosamente y un segundo arranque frío releyó y validó el mismo libro sin pérdida.
+- Límite de la evidencia: todavía no existe prueba en dispositivo físico y esta validación no cubre comprobantes binarios ni sincronización cloud.
 
 ## Nota de seguridad sobre historial anterior
 
