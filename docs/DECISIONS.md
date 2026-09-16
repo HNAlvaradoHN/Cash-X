@@ -150,3 +150,30 @@
 **Motivo:** agilizar la captura de montos compuestos y mantener precisión financiera sin obligar al usuario a usar una calculadora externa.
 
 **Consecuencias:** el dominio debe recibir un monto monetario ya validado y normalizado; la UI de calculadora no debe convertirse en la fuente de verdad del cálculo financiero ni introducir aritmética binaria imprecisa.
+
+## DEC-011 — Una base de código PWA/Android con Dexie + IndexedDB y Capacitor
+
+**Fecha:** 2026-09-16
+
+**Decisión:** Cash-X v0.1 mantendrá una sola base de código TypeScript + Vite. La web se entregará como PWA y Android se empaquetará con Capacitor. Los datos estructurados usarán IndexedDB mediante Dexie tanto en PWA como dentro del runtime Android de Capacitor.
+
+**Detalles:**
+
+- no se implementarán dos motores de base de datos en v0.1;
+- UI y dominio no accederán directamente a Dexie; usarán contratos de repositorio;
+- las operaciones relacionadas que deban ser atómicas usarán transacciones;
+- las migraciones de esquema serán versionadas y probadas;
+- la PWA solicitará almacenamiento persistente cuando el navegador lo permita, pero backup seguirá siendo obligatorio;
+- los comprobantes usan una abstracción separada; el primer adaptador puede guardar `Blob` en un almacén dedicado de IndexedDB y cambiar a OPFS/sistema de archivos nativo si las pruebas de tamaño o rendimiento lo justifican;
+- PWA y APK son instalaciones con almacenamiento separado; en v0.1 la transferencia de datos entre ambas se hará mediante backup/restauración versionado;
+- SQLite no se adopta inicialmente y solo se reconsiderará por evidencia concreta de rendimiento, cifrado, interoperabilidad o confiabilidad.
+
+**Alternativas evaluadas:**
+
+- IndexedDB/Dexie en PWA + SQLite nativo en Android: rechazado inicialmente por duplicar adaptadores, migraciones y pruebas;
+- SQLite WASM + OPFS en web: rechazado inicialmente por complejidad adicional sin necesidad demostrada;
+- una capa SQLite comunitaria como dependencia central: válida técnicamente, pero innecesaria para el alcance v0.1 y con mayor superficie de mantenimiento.
+
+**Motivo:** maximizar integridad, simplicidad y mantenibilidad con una sola implementación local mientras se conserva una salida limpia a SQLite futuro detrás de contratos de persistencia.
+
+**Consecuencias:** antes de implementar el núcleo financiero se hará un spike que valide migraciones, transacciones, Papelera/restauración, comprobantes, backup y ejecución real tanto en PWA como en Android mediante Capacitor. Detalles: `docs/PERSISTENCE.md`.
