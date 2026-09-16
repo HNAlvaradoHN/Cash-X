@@ -6,10 +6,7 @@ import type {
   CategoryRow,
   FinancialRecordRow,
 } from '../src/domain/persistence-types';
-import {
-  CASH_X_BACKUP_MIME,
-  decodeCashXBackupFile,
-} from '../src/backup/backup-file';
+import { CASH_X_BACKUP_MIME, decodeCashXBackupFile } from '../src/backup/backup-file';
 import { CashXBackupFileService } from '../src/backup/backup-file-service';
 import { CashXDatabase } from '../src/persistence/database';
 import { DexieAttachmentStore } from '../src/persistence/dexie-attachment-store';
@@ -115,6 +112,12 @@ async function readBytes(blob: Blob): Promise<Uint8Array> {
   return new Uint8Array(await blob.arrayBuffer());
 }
 
+function flipByte(bytes: Uint8Array, index: number, mask: number): void {
+  const current = bytes[index];
+  if (current === undefined) throw new Error(`Test byte index ${index} is out of range.`);
+  bytes[index] = current ^ mask;
+}
+
 afterEach(async () => {
   const names = [...openDatabases].map((db) => db.name);
   for (const db of openDatabases) db.close();
@@ -173,7 +176,7 @@ describe('Cash-X external backup file', () => {
 
     const bytes = new Uint8Array(await file.arrayBuffer());
     const firstManifestByte = 16 + 4 + 32;
-    bytes[firstManifestByte] ^= 0x01;
+    flipByte(bytes, firstManifestByte, 0x01);
 
     await expect(decodeCashXBackupFile(new Blob([bytes.buffer]))).rejects.toThrow(
       'manifest integrity check failed',
@@ -188,7 +191,7 @@ describe('Cash-X external backup file', () => {
     );
 
     const corruptedBytes = new Uint8Array(await file.arrayBuffer());
-    corruptedBytes[corruptedBytes.length - 1] ^= 0xff;
+    flipByte(corruptedBytes, corruptedBytes.length - 1, 0xff);
     await expect(decodeCashXBackupFile(new Blob([corruptedBytes.buffer]))).rejects.toThrow(
       'integrity check failed',
     );
