@@ -1,14 +1,44 @@
+# Dependencias y builds
 node_modules/
 dist/
 build/
+coverage/
+.vite/
+*.log
+
+# Entorno y secretos
 .env
 .env.*
+!.env.example
 *.local
-*.log
-*.keystore
-*.jks
-*.pem
-*.p12
-*.key
 secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Datos privados de usuario
+*.db
+*.sqlite
+*.sqlite3
+backups/
+receipts/
+attachments/
+exports/
+private-data/
+
+# Android
+android/.gradle/
+android/local.properties
+android/app/build/
 android/app/release/
+
+# IDE y sistema
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
