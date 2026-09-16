@@ -17,6 +17,7 @@
 - PR #6 `docs(product): persist checkpoint 3 domain rules`: integrado.
 - PR #7 `docs(product): define amount calculator behavior`: integrado.
 - PR #8 `docs(domain): formalize core model contracts`: integrado.
+- PR #9 `docs(architecture): choose unified PWA Android persistence`: decisión de persistencia/plataforma de v0.1.
 
 ## Versiones
 
