@@ -14,12 +14,15 @@
 - PR #3 `docs(product): define Cash-X v0.1 functional contract`: integrado.
 - PR #4 `docs(state): close functional contract checkpoint`: integrado.
 - PR #5 `docs(rules): add visual explanation rule`: integrado.
+- PR #6 `docs(product): persist checkpoint 3 domain rules`: integrado.
+- PR #7 `docs(product): define amount calculator behavior`: integrado.
 
 ## Versiones
 
 - Versión estable: ninguna.
 - Versión en desarrollo: pre-0.1.
 - Contrato funcional v0.1: definido y refinado durante Checkpoint 3.
+- Modelo lógico de dominio: formalizado en `docs/DOMAIN_MODEL.md`.
 - Código de aplicación Cash-X: aún no iniciado.
 - Último punto estable de aplicación: no existe todavía.
 - Despliegue estable: ninguno.
@@ -27,7 +30,7 @@
 
 ## Estado funcional
 
-El comportamiento de producto aprobado está registrado en `docs/PRODUCT_SPEC.md` y las decisiones relevantes en `docs/DECISIONS.md`.
+El comportamiento de producto aprobado está registrado en `docs/PRODUCT_SPEC.md`, las decisiones relevantes en `docs/DECISIONS.md` y el modelo técnico lógico en `docs/DOMAIN_MODEL.md`.
 
 El núcleo incluye libros independientes, ingresos/egresos, categorías configurables, campo adicional opcional por libro, saldo inicial opcional, cálculo automático de saldo, historial, búsqueda/filtros, Papelera con retención de 30 días, varios comprobantes opcionales, reportes detallados posteriores, funcionamiento offline y respaldo local manual.
 
@@ -49,6 +52,7 @@ El núcleo incluye libros independientes, ingresos/egresos, categorías configur
 - Papelera retiene hasta 30 días y permite restaurar;
 - eliminar un libro mueve/restaura la unidad completa con sus relaciones;
 - categorías/opciones usadas históricamente pueden retirarse del catálogo sin borrar su valor de registros existentes;
+- el campo de monto acepta operaciones aritméticas simples con cálculo exacto;
 - reportes v0.1 serán por un solo libro, con periodo semana/mes/año/rango personalizado y libro mayor cronológico con saldo acumulado.
 
 ## Checkpoint 1 — Base limpia del proyecto
@@ -74,15 +78,28 @@ Contrato base detallado: `docs/PRODUCT_SPEC.md`.
 
 **Estado: en progreso.**
 
-Ya se refinaron las reglas funcionales y de integridad necesarias para modelar libros, ingresos/egresos, categorías, campo adicional, eliminación/restauración y saldos automáticos.
+### Modelo de dominio
+
+**Formalización lógica completada.**
+
+`docs/DOMAIN_MODEL.md` define:
+
+- entidades Libro, Registro financiero, Categoría, Campo adicional/Opciones y Comprobante;
+- dinero exacto en unidades menores, portable entre persistencias;
+- fecha de negocio separada de timestamps técnicos;
+- orden histórico determinista;
+- referencias/fallbacks para conservar historial tras purgas;
+- Papelera como estado lógico con retención de 30 días;
+- eliminación/restauración de libros como agregados;
+- saldos derivados como fuente de verdad reconstruible;
+- contratos de casos de uso e invariantes que deben probarse.
 
 Pendiente antes de programar UI:
 
-1. definir formalmente entidades y contratos de dominio a partir del contrato aprobado;
-2. evaluar y decidir persistencia local con criterios de integridad, migración, backup y compatibilidad PWA/Android;
-3. implementar el núcleo financiero independiente de UI;
-4. añadir pruebas de saldo, edición, fechas, Papelera, restauración, referencias históricas y validaciones;
-5. validar recuperación/migración básica.
+1. comparar y decidir persistencia local con criterios de integridad, migración, backup, archivos adjuntos y compatibilidad PWA/Android;
+2. implementar el núcleo financiero independiente de UI sobre contratos de persistencia;
+3. añadir pruebas de dinero, saldo, edición, fechas, Papelera, restauración, referencias históricas y validaciones;
+4. validar migraciones, recuperación y cleanup de archivos.
 
 ## CI
 
@@ -96,4 +113,4 @@ No hay trabajo funcional Cash-X pendiente de integrar.
 
 ## Siguiente paso exacto
 
-**Continuar Checkpoint 3: traducir las reglas aprobadas a entidades/contratos de dominio y comparar opciones de persistencia local para PWA + Android antes de escribir el núcleo financiero.**
+**Continuar Checkpoint 3 comparando opciones concretas de persistencia local para PWA + Android. La decisión debe cubrir integridad, transacciones, migraciones, backup/restauración, archivos/comprobantes, compatibilidad, mantenimiento y costo antes de escribir el núcleo financiero.**
