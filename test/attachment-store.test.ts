@@ -68,7 +68,8 @@ function makeAttachment(
   bytes: Uint8Array,
   options: { recordId?: string; createdAt?: string; fileName?: string } = {},
 ): AttachmentRow {
-  const blob = new Blob([bytes], { type: 'application/octet-stream' });
+  const byteCopy = Uint8Array.from(bytes);
+  const blob = new Blob([byteCopy.buffer], { type: 'application/octet-stream' });
   return {
     id,
     recordId: options.recordId ?? 'record-1',
