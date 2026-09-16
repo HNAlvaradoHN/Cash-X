@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** persistencia local estructurada, build Android, reapertura WebView, comprobantes `Blob` y reproducibilidad de dependencias validados; backup/Drive pendientes
+**Estado:** persistencia local estructurada, build Android, reapertura WebView, comprobantes `Blob`, reproducibilidad y backup externo validados; Google Drive y pruebas físicas pendientes
 
 ## Objetivo
 
@@ -17,6 +17,7 @@ Mantener una sola base de código para PWA y Android, priorizando integridad de 
 - Acceso únicamente mediante contratos de persistencia; UI no toca Dexie directamente.
 - Comprobantes detrás de `AttachmentStore`.
 - Primer adaptador de comprobantes: `DexieAttachmentStore` con `Blob` en IndexedDB.
+- Backup externo: archivo único `.cashx` versionado, independiente de nube.
 - Google Drive opcional detrás de `CloudSyncProvider`; sin backend propio de Cash-X.
 - SQLite queda como alternativa futura solo si evidencia real justifica migrar.
 
@@ -63,19 +64,29 @@ Regla operativa:
 - CI usa `npm ci` y debe fallar si ambos archivos dejan de ser coherentes;
 - no se actualizan dependencias oportunísticamente dentro de trabajo no relacionado.
 
-## Backup binario
+## Backup externo con binarios
 
-El backup actual demuestra restauración idempotente a nivel de objetos en memoria, pero **el formato externo definitivo todavía no está cerrado**. Un `Blob` no debe asumirse transportable como bytes mediante `JSON.stringify` sin una codificación/paquete explícito.
+PR #27 cerró el hueco de transporte binario mediante un contenedor propio pequeño y versionado, sin añadir una dependencia ZIP.
 
-Antes de considerar backup/restauración terminado se definirá un contenedor versionado que preserve:
+El archivo `.cashx` v1 contiene:
 
-- datos estructurados;
-- metadatos de comprobantes;
-- bytes de los comprobantes;
-- integridad/verificación;
-- importación idempotente y recuperación ante archivo incompleto o corrupto.
+- header `CASHX-BACKUP-V1`;
+- longitud de manifiesto;
+- SHA-256 del manifiesto;
+- manifiesto JSON con datos estructurados y metadatos de comprobantes;
+- comprobantes como bytes crudos contiguos;
+- SHA-256 calculado sobre los bytes reales de cada comprobante;
+- offsets, longitudes y tamaño total del payload.
 
-Este mismo formato podrá servir como base para transferencia manual entre PWA/APK y para copias almacenadas en Google Drive.
+Antes de restaurar se valida completamente el archivo, incluidos tipos, IDs únicos, referencias, tamaño total, offsets, hash de manifiesto y hashes de comprobantes. Solo después se entrega un `CashXBackupV1` válido a `LocalPersistence.restoreBackup`, que escribe dentro de una transacción Dexie.
+
+La prueba automatizada crea una instalación origen, exporta un `.cashx`, restaura dos veces en una segunda base independiente y verifica que libros, categorías, registros y comprobantes quedan íntegros sin duplicados. También altera deliberadamente manifiesto y payload y prueba un truncamiento; los tres casos se rechazan antes de restaurar.
+
+El archivo conserva elementos que aún están en Papelera para representar el estado completo de la instalación.
+
+El formato detallado se mantiene en `docs/BACKUP.md`.
+
+**Limitación de seguridad:** `.cashx` v1 aporta integridad, no cifrado. Debe tratarse como información financiera privada. Una futura versión puede añadir cifrado sin cambiar el modelo financiero ni el contrato de persistencia.
 
 ## Google Drive opcional
 
@@ -83,6 +94,7 @@ Este mismo formato podrá servir como base para transferencia manual entre PWA/A
 - Con Drive, cada dispositivo mantiene copia local y sincroniza mediante Google OAuth/Drive.
 - Se prioriza `drive.appdata`; respaldos visibles creados por Cash-X pueden usar `drive.file`.
 - No se solicita acceso amplio a todo el Drive.
+- El contenedor `.cashx` es el objeto de transferencia/backup inicial que el adaptador Drive puede almacenar sin conocer detalles de Dexie.
 - Sync debe ser idempotente, recuperable y conservar conflictos concurrentes en vez de sobrescribirlos.
 - Desconectar Drive no borra datos locales.
 - TeraBox queda como proveedor futuro solo mediante API oficial validada.
@@ -119,6 +131,8 @@ PR #23 amplió esa evidencia a comprobantes binarios y validó `AttachmentStore`
 
 PR #25 añadió `package-lock.json` y validó la instalación reproducible con `npm ci` sin romper typecheck, tests, build web ni el pipeline Android.
 
+PR #27 validó el contenedor externo `.cashx`, restauración entre dos instalaciones de prueba, idempotencia y detección de corrupción/truncamiento, sin nuevas dependencias de producción.
+
 ## Dependencias del spike
 
 Versiones directas fijadas tras revisión de mantenimiento/licencia/compatibilidad:
@@ -132,15 +146,16 @@ Versiones directas fijadas tras revisión de mantenimiento/licencia/compatibilid
 
 El árbol transitivo queda fijado por `package-lock.json` y CI usa `npm ci`.
 
+El formato `.cashx` no introduce una dependencia adicional de producción.
+
 ## Validaciones restantes de Checkpoint 3
 
-- formato de backup externo que incluya binarios;
-- backup/restauración entre instalaciones reales/de prueba;
-- límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
-- Google OAuth/Drive;
+- Google OAuth/Drive con permisos mínimos;
+- transporte de `.cashx` mediante `appDataFolder`;
 - dos instalaciones offline/reconexión;
 - conflicto concurrente sin pérdida silenciosa;
 - desconexión/reconexión Drive;
+- límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
 - prueba física Android antes de entrega real.
 
 ## Regla de arquitectura
@@ -148,6 +163,8 @@ El árbol transitivo queda fijado por `package-lock.json` y CI usa `npm ci`.
 `UI -> casos de uso -> contratos de repositorio -> Dexie/IndexedDB`
 
 `                               -> AttachmentStore -> Dexie/Blob | futuro OPFS/filesystem`
+
+`                               -> BackupFileService -> .cashx`
 
 `                               -> SyncEngine -> CloudSyncProvider -> Google Drive`
 
