@@ -8,16 +8,16 @@
 - Oficial: `HNAlvaradoHN/Cash-X`
 - Visibilidad: pública.
 - Rama principal: `main`.
-- Rama de trabajo actual: `docs/functional-contract-v01`.
-- PR activo: #3 `docs(product): define Cash-X v0.1 functional contract`.
+- PR activo: ninguno.
 - PR #1 `chore(project): bootstrap Cash-X repository`: integrado.
 - PR #2 `docs(project): close bootstrap checkpoint`: integrado.
+- PR #3 `docs(product): define Cash-X v0.1 functional contract`: integrado.
 
 ## Versiones
 
 - Versión estable: ninguna.
 - Versión en desarrollo: pre-0.1.
-- Contrato funcional v0.1: definido.
+- Contrato funcional v0.1: definido y registrado.
 - Código de aplicación Cash-X: aún no iniciado.
 - Último punto estable de aplicación: no existe todavía.
 - Despliegue estable: ninguno.
@@ -25,7 +25,7 @@
 
 ## Estado funcional
 
-El comportamiento mínimo de Cash-X ya está definido en `docs/PRODUCT_SPEC.md`.
+El comportamiento mínimo de Cash-X está definido en `docs/PRODUCT_SPEC.md`.
 
 El núcleo aprobado incluye libros independientes, ingresos/egresos, categorías configurables, saldo inicial opcional, cálculo de saldo, historial, búsqueda/filtros, Papelera, varios comprobantes opcionales, reportes básicos, funcionamiento offline y respaldo local manual.
 
@@ -44,7 +44,7 @@ Resultado verificado:
 
 ## Checkpoint 2 — Contrato funcional mínimo
 
-**Estado: completado, pendiente únicamente de integrar el PR #3.**
+**Estado: completado.**
 
 Decisiones confirmadas:
 
@@ -57,15 +57,17 @@ Decisiones confirmadas:
 - sin login ni nube obligatorios;
 - fuera de alcance: sincronización multiusuario, bancos, inventario, IA y contabilidad avanzada.
 
+Contrato detallado: `docs/PRODUCT_SPEC.md`.
+
 ## CI
 
 Cash-X todavía no tiene CI de aplicación porque aún no existe código que compilar o probar. Los runs históricos pertenecen al proyecto anterior y no representan el estado de Cash-X.
 
-Para este checkpoint documental no hay validaciones de build aplicables; la validación consiste en revisar consistencia entre contrato, decisiones, roadmap y estado.
+Para el Checkpoint 2 no había validaciones de build aplicables; se verificó consistencia entre contrato, decisiones, roadmap y estado antes de integrar el PR #3.
 
 ## Trabajo paralelo
 
-No hay trabajo funcional Cash-X paralelo pendiente de integrar.
+No hay trabajo funcional Cash-X pendiente de integrar.
 
 ## Siguiente paso exacto
 
