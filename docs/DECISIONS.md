@@ -130,3 +130,23 @@
 **Motivo:** facilitar revisión y auditoría sin sacrificar legibilidad.
 
 **Consecuencias:** la implementación de reportes se mantiene para un checkpoint posterior; primero se construirá y probará el núcleo financiero.
+
+## DEC-010 — Entrada de monto con calculadora integrada y precisión financiera
+
+**Fecha:** 2026-09-16
+
+**Decisión:** el campo de monto de ingreso/egreso permitirá escribir operaciones aritméticas simples antes de guardar el valor final. Por ejemplo, el usuario podrá introducir `200 + 100` y Cash-X resolverá automáticamente `300`.
+
+**Comportamiento aprobado:**
+
+- la experiencia puede usar un teclado/calculadora similar al mostrado como referencia, integrado al ingreso del monto;
+- debe soportar al menos suma, resta, multiplicación y división, además de decimales;
+- el usuario puede componer una operación y confirmar el resultado sin tener que calcularlo fuera de Cash-X;
+- solo se guarda el monto final resultante como valor financiero del registro; la expresión de cálculo no es necesaria para el historial salvo futura decisión explícita;
+- el resultado debe ser determinista y exacto para dinero: no se aceptan errores de punto flotante visibles ni acumulación de centavos incorrectos;
+- se validan división por cero, expresiones incompletas, resultados inválidos y montos no permitidos antes de guardar;
+- las decisiones técnicas de representación numérica y redondeo son responsabilidad de la implementación y no deben trasladarse al usuario como preguntas de configuración ordinarias.
+
+**Motivo:** agilizar la captura de montos compuestos y mantener precisión financiera sin obligar al usuario a usar una calculadora externa.
+
+**Consecuencias:** el dominio debe recibir un monto monetario ya validado y normalizado; la UI de calculadora no debe convertirse en la fuente de verdad del cálculo financiero ni introducir aritmética binaria imprecisa.

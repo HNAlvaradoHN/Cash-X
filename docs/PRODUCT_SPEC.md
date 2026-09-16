@@ -87,6 +87,26 @@ La vista principal del formulario muestra monto, descripción, categoría, fecha
 
 Los datos opcionales ya guardados nunca se pierden por estar visualmente contraídos.
 
+### Entrada de monto con calculadora
+
+El campo `Monto` debe aceptar tanto un valor directo como una operación aritmética simple. El usuario podrá, por ejemplo, escribir `200 + 100` y Cash-X mostrará/resolverá `300` antes de guardar.
+
+La experiencia de entrada puede usar un teclado/calculadora integrado similar a una calculadora básica, con soporte inicial para:
+
+- suma;
+- resta;
+- multiplicación;
+- división;
+- decimales;
+- borrar/corregir;
+- confirmar resultado.
+
+Solo el resultado monetario final se guarda como monto del ingreso o egreso. La expresión usada para calcularlo no forma parte obligatoria del historial.
+
+Los cálculos monetarios deben ser deterministas y exactos. La implementación no debe depender de aritmética binaria de punto flotante que produzca errores visibles o acumulación incorrecta de centavos. Se validan expresiones incompletas, división por cero, resultados inválidos y montos no permitidos antes de guardar.
+
+La selección de representación numérica, precisión y estrategia de redondeo es una decisión técnica interna: el usuario no debe ser interrogado por configuraciones ordinarias de precisión financiera.
+
 ## Categorías
 
 Las categorías son configurables por libro. Se pueden crear, editar y ordenar.
@@ -296,7 +316,7 @@ Previsto para v0.1:
 - inventario;
 - préstamos/cuentas por cobrar;
 - IA;
-- conversión automática entre monedas;
+- conversión automática de moneda;
 - contabilidad de partida doble;
 - agrupaciones tipo libro compartido/split book;
 - presupuestos y metas como funciones centrales;
