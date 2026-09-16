@@ -10,8 +10,9 @@
 - Rama principal: `main`.
 - Versión estable: ninguna.
 - Versión en desarrollo: pre-0.1.
-- PR activo: #14 `spike(persistence): validate local Dexie foundation`.
-- Issue activo asociado: #11 `Checkpoint 3 spike: validate local persistence foundation`.
+- PR #14 `spike(persistence): validate local Dexie foundation`: integrado.
+- Issue #11 `Checkpoint 3 spike: validate local persistence foundation`: cerrado como completado por PR #14.
+- PR activo después de integrar PR #14: ninguno.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y quedaron cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
@@ -30,7 +31,7 @@ Continúan aprobadas las reglas de libros independientes, ingreso/egreso, catego
 
 ### Persistencia local — primer tramo del spike
 
-**Implementado y validado por CI en PR #14.**
+**Completado e integrado en `main`.**
 
 Se añadió:
 
@@ -42,7 +43,7 @@ Se añadió:
 - configuración base de Capacitor;
 - CI de aplicación.
 
-Validaciones automáticas del primer run de CI: instalación, typecheck, 5 pruebas de persistencia y build, todas correctas.
+Validaciones automáticas del PR #14: instalación, typecheck, 5 pruebas de persistencia y build, todas correctas.
 
 Las pruebas cubren:
 
@@ -64,11 +65,11 @@ Las pruebas cubren:
 
 ## CI
 
-Cash-X ya tiene CI propio en `.github/workflows/ci.yml`. El primer run asociado al PR #14 terminó con `typecheck`, `test` y `build` exitosos.
+Cash-X ya tiene CI propio en `.github/workflows/ci.yml`. El PR #14 pasó instalación, typecheck, tests y build antes de integrarse.
 
 ## Trabajo paralelo
 
-No hay otro PR funcional abierto ni trabajo paralelo identificado.
+No hay PR funcional abierto ni trabajo paralelo identificado.
 
 ## Siguiente paso exacto
 
