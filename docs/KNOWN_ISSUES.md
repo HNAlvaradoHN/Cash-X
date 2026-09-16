@@ -3,28 +3,30 @@
 ## KI-001 — No existe todavía una versión ejecutable de Cash-X
 
 - Síntoma: no hay build, APK ni PWA de Cash-X.
-- Causa: el proyecto está en fase de definición y limpieza del repositorio.
-- Impacto: todavía no puede usarse para registrar movimientos.
-- Workaround: ninguno; no se debe acelerar saltando la definición funcional.
+- Causa: el proyecto terminó apenas su checkpoint de base limpia y todavía no inició implementación funcional.
+- Impacto: aún no puede usarse para registrar movimientos.
+- Workaround: ninguno; el siguiente paso es definir correctamente el contrato funcional antes de programar.
 - Prioridad: alta.
-- Estado: esperado; se resolverá progresivamente desde Checkpoint 2.
+- Estado: abierto.
 
 ## KI-002 — CI de Cash-X aún no configurado
 
 - Síntoma: `main` no ejecuta validaciones automáticas de Cash-X.
 - Causa: todavía no existe código de aplicación que compilar o probar.
 - Impacto: no hay build automatizado actual.
-- Workaround: validación manual de documentación durante el bootstrap.
+- Workaround: ninguno necesario en esta fase.
 - Prioridad: media.
-- Estado: se abordará cuando exista una base de código que justifique CI.
+- Estado: abierto; se abordará cuando exista una base de código que justifique CI.
 
-## KI-003 — Historial legacy ajeno a Cash-X
+## KI-003 — Nombres de ramas legacy todavía visibles
 
-- Síntoma: ramas heredadas contienen payloads y workflows de REyDI/Gestión Iglesia.
-- Causa: el repositorio fue reutilizado para Cash-X.
-- Impacto: confusión y posible exposición innecesaria de artefactos antiguos en un repositorio ahora público.
-- Workaround: no fusionar ni reutilizar esos contenidos; retirar sus referencias activas durante el bootstrap.
-- Prioridad: alta.
-- Estado: en limpieza durante Cash-X #1.
+- Síntoma: aparecen ramas con nombres del proyecto anterior.
+- Causa: la conexión actual de GitHub permite mover referencias pero no eliminar ramas.
+- Impacto: únicamente visual/organizativo; todas apuntan al mismo commit que `main` y no contienen trabajo único activo.
+- Workaround: no usarlas. Pueden eliminarse manualmente desde GitHub cuando se desee.
+- Prioridad: baja.
+- Estado: neutralizado, pendiente solo de eliminación de nombres.
 
-Nota de seguridad: no hay evidencia de secretos visibles en `main`. El payload legacy está comprimido y no se considera confiable ni parte de Cash-X; si alguna clave real hubiera sido incluida históricamente, debe rotarse independientemente de borrar una rama.
+## Nota de seguridad sobre historial anterior
+
+Las referencias activas ya no apuntan al payload legacy. Los objetos Git antiguos pueden seguir siendo accesibles temporalmente mediante SHA. No hay evidencia de secretos visibles en `main`; cualquier credencial real que alguna vez se hubiera publicado tendría que rotarse aunque el commit deje de estar referenciado.
