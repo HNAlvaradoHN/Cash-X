@@ -46,15 +46,16 @@ Ya definidos/refinados:
 - Papelera con retención máxima de 30 días;
 - restauración de libros completos como unidad lógica;
 - límites de contenido variable en previews;
-- requisitos de dominio que la persistencia deberá soportar.
+- calculadora integrada para monto con precisión financiera;
+- modelo lógico formalizado en `docs/DOMAIN_MODEL.md`;
+- representación exacta de dinero, fechas, identificadores, referencias históricas, comprobantes y contratos de dominio.
 
 Pendiente antes de programar UI:
 
-1. formalizar entidades, invariantes y contratos de dominio;
-2. comparar y decidir almacenamiento local con criterios de integridad, migración, backup, archivos adjuntos y compatibilidad PWA/Android;
-3. implementar libros, categorías, campo adicional, ingresos/egresos, Papelera y cálculo de saldos sin depender de la UI;
-4. añadir pruebas del dominio para saldo, edición, fechas, eliminación/restauración, referencias históricas y validaciones;
-5. validar migraciones y recuperación básica.
+1. **comparar y decidir almacenamiento local** con criterios de integridad, transacciones, migración, backup, archivos adjuntos, compatibilidad PWA/Android, mantenimiento y costo;
+2. implementar libros, categorías, campo adicional, ingresos/egresos, Papelera y cálculo de saldos sin depender de la UI;
+3. añadir pruebas del dominio para dinero, saldo, edición, fechas, eliminación/restauración, referencias históricas y validaciones;
+4. validar migraciones, recuperación básica y cleanup de comprobantes.
 
 La UI será mínima y no definirá la arquitectura.
 
