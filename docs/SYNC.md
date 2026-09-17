@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** arquitectura aprobada; implementación pendiente de spike y validación real
+**Estado:** arquitectura y transporte Drive implementados; OAuth real y E2E multi-dispositivo pendientes
 
 ## Objetivo
 
@@ -58,24 +58,33 @@ Un código o QR de emparejamiento entre dispositivos puede evaluarse más adelan
 Se aplicará mínimo privilegio:
 
 - `drive.appdata` para el estado interno de sincronización que el usuario no debe editar manualmente;
-- `drive.file` solo cuando sea necesario crear/administrar archivos visibles que Cash-X haya creado, por ejemplo respaldos exportados;
+- `drive.file` solo para crear/administrar archivos visibles que Cash-X haya creado, por ejemplo respaldos y exportaciones;
 - no se solicitará acceso amplio `drive` a todos los archivos del usuario.
 
-### Organización en Drive
+### Organización estricta en Drive
 
-La sincronización viva usará el espacio de datos de aplicación de Drive para reducir el riesgo de que el usuario mueva, edite o borre por accidente archivos internos.
+La sincronización viva usa `appDataFolder`, espacio de aplicación aislado de los archivos visibles del usuario.
 
-Los respaldos manuales y exportaciones que deban ser visibles podrán guardarse en una estructura administrada por Cash-X, por ejemplo:
+Los archivos visibles creados automáticamente por Cash-X solo pueden existir bajo esta jerarquía:
 
-`Cash-X/Backups/`
+```text
+Mi unidad
+└── Cash-X
+    ├── Backups
+    └── Exportaciones
+```
 
-`Cash-X/Exportaciones/`
+Reglas:
 
-La ubicación visible se implementará con permisos limitados a archivos creados/seleccionados para Cash-X.
+- no se crean archivos visibles automáticos directamente en la raíz de Mi unidad;
+- `Cash-X`, `Backups` y `Exportaciones` usan identidades privadas mediante `appProperties` para poder reutilizarse;
+- si aparecen múltiples carpetas administradas para el mismo rol, la operación se detiene en lugar de crear otra y aumentar la dispersión;
+- una ubicación visible distinta solo se permitirá mediante una futura acción explícita del usuario de guardar/copiar en otra carpeta;
+- detalles de transporte y pruebas: `docs/DRIVE.md`.
 
 ## Motor de sincronización
 
-La base local Dexie/IndexedDB sigue siendo la fuente operativa del dispositivo. La sincronización se implementa detrás de un contrato independiente, por ejemplo `CloudSyncProvider`, para que el dominio financiero no conozca Google Drive.
+La base local Dexie/IndexedDB sigue siendo la fuente operativa del dispositivo. La sincronización se implementa detrás de contratos independientes para que el dominio financiero no conozca Google Drive.
 
 Flujo:
 
@@ -84,6 +93,13 @@ Flujo:
 `                         -> SyncEngine -> CloudSyncProvider -> Google Drive`
 
 La sincronización nunca debe modificar directamente componentes de UI ni saltarse las validaciones del dominio.
+
+El primer transporte ya implementado separa:
+
+- `CloudAuthorizationProvider`: entrega un access token sin acoplar el transporte a una estrategia OAuth concreta;
+- `GoogleDriveHttpClient`: REST Drive v3, timeout, cancelación y reintentos acotados;
+- `GoogleDriveCloudSyncProvider`: objetos internos en `appDataFolder`;
+- `GoogleDriveVisibleFileStore`: archivos visibles restringidos a la jerarquía `Cash-X`.
 
 ## Cambios, idempotencia y orden
 
@@ -102,7 +118,9 @@ El protocolo debe soportar como mínimo:
 
 Los cambios se aplicarán de forma idempotente: recibir el mismo cambio dos veces no puede duplicar ingresos, egresos ni comprobantes.
 
-La implementación usará lotes/versiones de cambios y snapshots periódicos para evitar subir la base completa por cada modificación y para permitir recuperación determinista.
+El transporte Drive ya usa claves estables en `appProperties`: si una clave existe exactamente una vez, se actualiza el mismo archivo; si aparecen múltiples archivos para la misma identidad, se rechaza el estado ambiguo en vez de sobrescribir silenciosamente.
+
+El motor completo usará lotes/versiones de cambios y snapshots periódicos para evitar subir la base completa por cada modificación y permitir recuperación determinista.
 
 ## Conflictos entre dispositivos
 
@@ -117,6 +135,8 @@ Regla:
 
 La integridad financiera tiene prioridad sobre una sincronización aparentemente simple que pueda perder información.
 
+El motor de conflicto todavía está pendiente; PR #29 valida el transporte, no la convergencia multi-dispositivo completa.
+
 ## Comprobantes
 
 Los comprobantes se sincronizan detrás de `AttachmentStore`/`CloudSyncProvider` y no dentro de la lógica del saldo.
@@ -124,6 +144,8 @@ Los comprobantes se sincronizan detrás de `AttachmentStore`/`CloudSyncProvider`
 Cada archivo debe tener identificador estable, tamaño, tipo y hash de integridad. El hash permite validar descargas y evitar duplicados idénticos cuando sea razonable.
 
 Los metadatos y el archivo binario deben poder recuperarse de forma coherente; una sincronización parcial no puede dejar un registro apuntando silenciosamente a un comprobante inexistente sin marcar ese estado.
+
+El contenedor `.cashx` v1 ya transporta datos estructurados y comprobantes con SHA-256, por lo que Drive puede tratar ese backup como un `Blob` opaco y la restauración conserva su propia verificación de integridad.
 
 ## Cuándo sincroniza
 
@@ -136,7 +158,20 @@ En v0.1 se intentará sincronizar:
 
 La PWA sin backend no prometerá sincronización continua mientras el navegador esté completamente cerrado. El modelo de autorización web de Google tampoco debe depender de refresh tokens guardados inseguramente en JavaScript. Si Google requiere renovar autorización, Cash-X mostrará una acción clara para reconectar Drive sin afectar los datos locales.
 
-Android podrá aprovechar capacidades nativas de autenticación/almacenamiento seguro cuando se materialice el adaptador Capacitor, pero el dominio y el protocolo de sincronización serán los mismos.
+Android podrá aprovechar capacidades nativas de autenticación/almacenamiento seguro, pero el dominio y el protocolo de sincronización serán los mismos.
+
+## Errores, reintentos y límites
+
+El transporte Drive implementado:
+
+- reintenta de manera acotada HTTP 408, 429, 5xx y 403 de rate limit conocidos;
+- respeta `Retry-After` cuando Google lo devuelve;
+- usa backoff exponencial acotado cuando no existe `Retry-After`;
+- tiene timeout por solicitud;
+- acepta cancelación externa mediante `AbortSignal`;
+- no reintenta indefinidamente errores de autorización o validación.
+
+Las cuotas y condiciones reales todavía deben medirse con una cuenta de prueba y dispositivos reales antes de considerar el checkpoint cerrado.
 
 ## Desconectar Google Drive
 
@@ -173,13 +208,24 @@ Los archivos ocupan el almacenamiento de la cuenta de Google Drive del usuario.
 - la sincronización valida versión, esquema, identificadores, hashes y relaciones antes de aplicar cambios;
 - restaurar/sincronizar datos externos nunca omite las reglas del dominio.
 
-## Validación obligatoria antes de considerarlo listo
+## Validación actual
 
-El spike deberá probar al menos:
+PR #29 valida con HTTP simulado:
 
-- modo completamente local sin cuenta;
-- autorización Google desde PWA;
-- autorización Google desde Android/Capacitor;
+- `appDataFolder` como único destino de objetos internos;
+- creación, listado/búsqueda, actualización y descarga;
+- no duplicar una identidad remota existente;
+- rechazar identidades ambiguas duplicadas;
+- reintento de rate limit;
+- creación y reutilización de `Mi unidad/Cash-X/Backups`;
+- ausencia de archivos visibles automáticos sueltos en la raíz.
+
+El CI general mantiene typecheck, tests, build web, APK debug y probe Android verdes.
+
+## Validación obligatoria todavía pendiente antes de considerarlo listo
+
+- autorización Google real desde PWA;
+- autorización Google real desde Android/Capacitor;
 - crear datos en un dispositivo y recibirlos en otro con la misma cuenta;
 - trabajo offline en ambos dispositivos y posterior convergencia;
 - cambios simultáneos independientes;
@@ -187,10 +233,11 @@ El spike deberá probar al menos:
 - Papelera/restauración entre dispositivos;
 - comprobantes con hash, descarga y cleanup;
 - interrupción de red en mitad de una sincronización;
-- reintentos idempotentes;
+- reintentos idempotentes con Drive real;
 - desconectar/reconectar Drive sin perder datos locales;
 - backup/restauración manual como fallback;
-- límites y errores de cuota sin reintentos infinitos.
+- límites y errores de cuota sin reintentos infinitos;
+- prueba física Android antes de release.
 
 ## Referencias externas verificadas
 
@@ -198,4 +245,6 @@ El spike deberá probar al menos:
 - Google Drive appDataFolder: https://developers.google.com/workspace/drive/api/guides/appdata
 - Google Identity Services / autorización web: https://developers.google.com/identity/oauth2/web/guides/choose-authorization-model
 - Google Drive API limits/pricing: https://developers.google.com/workspace/drive/api/guides/limits
+- Búsqueda y `appProperties`: https://developers.google.com/workspace/drive/api/guides/search-files
+- Límites de propiedades personalizadas: https://developers.google.com/workspace/drive/api/guides/properties
 - TeraBox integrations (para evaluación futura): https://www.terabox.com/integrations/docs?lang=en
