@@ -10,8 +10,8 @@
 
 ## KI-002 — CI de Cash-X
 
-- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23 y PR #25.
-- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque.
+- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23, PR #25 y PR #27.
+- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque. Las pruebas cubren también archivo externo `.cashx`, restauración entre dos bases, idempotencia y corrupción/truncamiento.
 
 ## KI-003 — Nombres de ramas legacy todavía visibles
 
@@ -39,13 +39,26 @@
 - Prioridad: media antes de release.
 - Estado: abierto.
 
-## KI-007 — Formato externo de backup con binarios pendiente
+## KI-007 — Formato externo de backup con binarios
 
-- Síntoma: el backup actual es suficiente para probar restauración idempotente a nivel de objetos, pero no existe todavía un contenedor externo versionado para transportar los bytes de los comprobantes.
-- Riesgo: un `Blob` no debe asumirse serializable a JSON como contenido binario.
-- Impacto: backup manual entre instalaciones y Google Drive no se consideran terminados todavía.
-- Prioridad: alta dentro de Checkpoint 3 antes de sincronización real.
-- Estado: abierto; siguiente paso exacto después de PR #25.
+- Estado: resuelto técnicamente por PR #27 para el contenedor v1.
+- Resultado: `.cashx` transporta datos estructurados y comprobantes como bytes crudos, verifica manifiesto y payloads con SHA-256 y se restaura idempotentemente en una segunda instalación de prueba.
+- Límite: todavía no existe UX final de exportar/importar ni prueba física con backups grandes.
+
+## KI-008 — Backup `.cashx` v1 no está cifrado
+
+- Síntoma: el archivo protege integridad, no confidencialidad.
+- Impacto: quien obtenga una copia del `.cashx` puede potencialmente leer datos y comprobantes.
+- Mitigación actual: tratar el archivo como información financiera privada y comunicarlo claramente en la futura UX de exportación.
+- Evolución posible: añadir cifrado en una versión posterior del contenedor sin cambiar el dominio financiero.
+- Prioridad: evaluar antes de release si el modelo de amenaza o distribución lo exige.
+- Estado: abierto/documentado, no bloquea el spike de sincronización.
+
+## KI-009 — Google Drive todavía no implementado
+
+- Estado: abierto; siguiente paso exacto de Checkpoint 3.
+- Alcance pendiente: OAuth con mínimo privilegio, `appDataFolder`, transporte de `.cashx`, dos instalaciones, reintentos, offline/reconexión y conflictos.
+- Restricción: no introducir backend propio, Supabase, Firebase o Cloudflare para resolver esta parte.
 
 ## Nota de seguridad sobre historial anterior
 

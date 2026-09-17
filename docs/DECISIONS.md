@@ -206,3 +206,31 @@
 **Motivo:** ofrecer continuidad real entre dispositivos usando una nube que ya pertenece al usuario, sin convertir Cash-X en un servicio SaaS ni introducir una infraestructura propia que aumente costo, superficie de ataque y mantenimiento.
 
 **Consecuencias:** el spike de Checkpoint 3 debe validar no solo Dexie/Capacitor, sino también sincronización Drive entre dos instalaciones, trabajo offline, convergencia, conflictos, interrupciones de red, reintentos idempotentes, comprobantes, desconexión/reconexión y backup fallback. Contrato detallado: `docs/SYNC.md`.
+
+## DEC-013 — Backup externo `.cashx` versionado con integridad binaria
+
+**Fecha:** 2026-09-16
+
+**Decisión:** Cash-X usará un archivo único `.cashx` como formato externo inicial de backup y transferencia entre instalaciones. El contenedor v1 combina un header fijo, un manifiesto JSON versionado y los comprobantes como bytes binarios crudos contiguos.
+
+**Detalles:**
+
+- no se serializan `Blob` directamente dentro de JSON;
+- el manifiesto incluye datos estructurados, metadatos, offsets, longitudes y tamaño total del payload;
+- el header contiene SHA-256 del manifiesto;
+- cada comprobante tiene SHA-256 calculado sobre sus bytes reales dentro del contenedor;
+- la importación valida formato, versiones, tipos, IDs únicos, relaciones, tamaños, offsets y hashes antes de escribir en IndexedDB;
+- la restauración reutiliza `LocalPersistence.restoreBackup` y mantiene IDs estables, por lo que repetir el mismo backup no duplica entidades;
+- elementos todavía presentes en Papelera forman parte del backup para representar el estado completo de la instalación;
+- el contenedor no añade una dependencia ZIP de producción;
+- `.cashx` v1 protege integridad, pero no cifra la información.
+
+**Alternativas evaluadas:**
+
+- JSON + Base64 para comprobantes: descartado como formato principal por mayor tamaño y por mezclar datos estructurados con binarios;
+- ZIP mediante librería adicional: técnicamente válido, pero pospuesto porque el contenedor necesario es simple y no justifica ampliar dependencias todavía;
+- archivos separados por comprobante: descartado porque complica respaldo manual, traslado y almacenamiento futuro en Google Drive.
+
+**Motivo:** disponer de un objeto autocontenido, verificable y eficiente que sirva tanto para backup manual como para transporte futuro por Google Drive, sin acoplar el dominio a Dexie ni a un proveedor cloud.
+
+**Consecuencias:** `CashXBackupFileService` será el límite de aplicación para exportar/restaurar archivos. El adaptador Google Drive podrá tratar `.cashx` como un `Blob` opaco. Una versión futura podrá añadir cifrado manteniendo compatibilidad versionada. Formato detallado: `docs/BACKUP.md`.

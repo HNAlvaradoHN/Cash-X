@@ -28,20 +28,20 @@ Ya completado:
 - generación de proyecto Android con Capacitor y compilación de APK debug en CI;
 - persistencia real Dexie/IndexedDB validada en Android WebView emulado: escritura, cierre forzado, reapertura e integridad;
 - `AttachmentStore` + `DexieAttachmentStore` con `Blob` validados: varios comprobantes, reapertura, rollback de lote, Papelera/restauración, purge y bytes persistidos también en Android WebView emulado;
-- `package-lock.json` versionado y CI migrado a instalación reproducible con `npm ci`.
+- `package-lock.json` versionado y CI migrado a instalación reproducible con `npm ci`;
+- formato externo `.cashx` v1 validado con manifiesto versionado, bytes binarios crudos, SHA-256, restauración entre dos instalaciones de prueba, idempotencia y detección de corrupción/truncamiento.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. definir el formato de backup externo que preserve datos estructurados y comprobantes binarios;
-2. validar backup/restauración entre instalaciones de prueba;
-3. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
-4. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
-5. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
-6. validar desconexión/reconexión de Drive sin perder datos locales;
-7. probar límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
-8. realizar una prueba física Android antes de una entrega real;
-9. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
-10. añadir pruebas del dominio financiero.
+1. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
+2. guardar/leer un backup `.cashx` en `appDataFolder` y recuperarlo desde una segunda instalación autorizada;
+3. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
+4. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
+5. validar desconexión/reconexión de Drive sin perder datos locales;
+6. probar límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
+7. realizar una prueba física Android antes de una entrega real;
+8. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
+9. añadir pruebas del dominio financiero.
 
 La UI final no se construye hasta cerrar las validaciones de persistencia necesarias.
 
@@ -59,7 +59,7 @@ Materializar APK/AAB reproducible, capacidades nativas y validaciones Android. E
 
 ## Checkpoint 7 — Reportes, exportación y backup
 
-Añadir PDF/CSV/Excel y completar backup/restauración versionado, incluyendo integración opcional con Google Drive.
+Añadir PDF/CSV/Excel y completar UX de backup/restauración versionado, incluyendo integración opcional con Google Drive. El contenedor técnico `.cashx` v1 queda definido desde Checkpoint 3 para poder validar sincronización antes de construir la UI final.
 
 ## Fuera de alcance hasta existir necesidad aprobada
 
