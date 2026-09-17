@@ -6,6 +6,7 @@ import type {
   FinancialRecordRow,
   MetaRow,
 } from '../domain/persistence-types';
+import type { SyncConflictRow, SyncOperationRow } from '../sync/persistent-sync-state';
 
 const STORES_V1 = {
   books: 'id, name, currency, updatedAt',
@@ -21,6 +22,12 @@ const STORES_V2 = {
   categories: 'id, bookId, active, name, updatedAt, deletedAt, [bookId+active]',
   attachments: 'id, recordId, createdAt, deletedAt',
   meta: 'key',
+};
+
+const STORES_V3 = {
+  ...STORES_V2,
+  syncOperations: 'operationId, deviceId, entityKind, entityId, [entityKind+entityId]',
+  syncConflicts: 'id, entityKind, entityId, [entityKind+entityId]',
 };
 
 type MutableLegacyRow = Record<string, unknown>;
@@ -54,13 +61,16 @@ export class CashXDatabase extends Dexie {
   categories!: EntityTable<CategoryRow, 'id'>;
   attachments!: EntityTable<AttachmentRow, 'id'>;
   meta!: EntityTable<MetaRow, 'key'>;
+  syncOperations!: EntityTable<SyncOperationRow, 'operationId'>;
+  syncConflicts!: EntityTable<SyncConflictRow, 'id'>;
 
   constructor(name = 'cash-x') {
     super(name);
 
     this.version(1).stores(STORES_V1);
     this.version(2).stores(STORES_V2).upgrade(migrateToVersion2);
+    this.version(3).stores(STORES_V3);
   }
 }
 
-export const cashXSchemaVersion = 2;
+export const cashXSchemaVersion = 3;
