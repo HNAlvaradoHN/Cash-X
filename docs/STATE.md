@@ -1,6 +1,6 @@
 # Estado del proyecto
 
-**Fecha:** 2026-09-16  
+**Fecha:** 2026-09-17  
 **Sesión oficial:** Cash-X #1
 
 ## Repositorio
@@ -19,12 +19,13 @@
 - PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado.
 - PR #25 `chore(ci): make dependency installation reproducible`: integrado.
 - PR #27 `feat(backup): validate external binary backup format`: integrado.
-- PR #29 `feat(sync): add ordered Google Drive transport`: integrado al cerrar este tramo.
-- Issue #19 `Checkpoint 3 spike: validate IndexedDB persistence in Android WebView`: cerrado como completado.
-- Issue #22 `Checkpoint 3 spike: validate attachment Blob storage and cleanup`: cerrado como completado por PR #23.
-- Issue #24 `Checkpoint 3: make dependency installation reproducible`: cerrado como completado por PR #25.
-- Issue #26 `Checkpoint 3: validate external backup with binary attachments`: cerrado como completado por PR #27.
-- Issue #28 `Checkpoint 3: implement Google Drive transport behind CloudSyncProvider`: cerrado como completado por PR #29.
+- PR #29 `feat(sync): add ordered Google Drive transport`: integrado.
+- PR #31 `feat(sync): validate deterministic conflict core`: integrado.
+- PR #33 `feat(sync): persist operation log and conflict state`: integrado.
+- PR #35 `feat(sync): add persistent offline replay queue`: integrado.
+- PR #37 `feat(sync): persist remote pull cursor`: integrado.
+- PR #39 `test(sync): validate restart recovery invariants`: integrado al cerrar este tramo.
+- Issues #19, #22, #24, #26, #28, #30, #32, #34, #36 y #38: cerrados como completados por sus PR correspondientes.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
@@ -51,42 +52,29 @@ PR #14 añadió scaffold TypeScript + Vite, Dexie/IndexedDB, migración de esque
 
 **Build debug y persistencia Dexie/IndexedDB validados en CI con Android emulado.**
 
-PR #17 validó generación temporal de `android/`, `cap sync`, Gradle `assembleDebug` y creación de APK debug.
-
-PR #20 añadió un probe técnico aislado que usa las implementaciones reales `CashXDatabase` y `LocalPersistence`. En un emulador Android API 35 el CI escribe datos, fuerza el cierre de `com.cashx.app`, abre nuevamente la aplicación y comprueba la integridad de los datos persistidos.
+PR #17 validó generación temporal de `android/`, `cap sync`, Gradle `assembleDebug` y creación de APK debug. PR #20 añadió un probe técnico aislado que usa las implementaciones reales `CashXDatabase` y `LocalPersistence`; Android API 35 emulado escribe datos, fuerza cierre y confirma integridad tras el segundo arranque frío.
 
 ### Comprobantes binarios
 
 **Primer adaptador local validado.**
 
-PR #23 añadió el contrato `AttachmentStore` y el adaptador `DexieAttachmentStore`. Las pruebas demuestran:
+PR #23 añadió `AttachmentStore` y `DexieAttachmentStore`. Las pruebas demuestran almacenamiento/lectura de `Blob`, reapertura conservando un `Blob` de 1 MiB, varios comprobantes por registro, rechazo de huérfanos, rollback de lote, Papelera/restauración, purge, validación de tamaño y persistencia binaria dentro de Android WebView emulado después de `force-stop`.
 
-- almacenamiento y lectura de `Blob` con metadatos;
-- cierre/reapertura de IndexedDB conservando un `Blob` de prueba de 1 MiB y sus bytes extremos;
-- varios comprobantes por registro y orden estable;
-- rechazo de comprobantes huérfanos o asociados a un registro en Papelera;
-- rollback completo de un lote cuando IndexedDB rechaza una escritura;
-- Papelera, restauración, eliminación definitiva protegida y purge por fecha;
-- rechazo de metadatos de tamaño que no coinciden con los bytes reales;
-- persistencia de un comprobante binario real dentro de Android WebView emulado después de `force-stop` y segundo arranque frío.
-
-Esto es evidencia suficiente para mantener `Blob` en IndexedDB como primer adaptador de v0.1. **No fija todavía un tamaño máximo de producto ni sustituye pruebas de cuota/memoria en dispositivos físicos.** Si evidencia posterior lo exige, `AttachmentStore` permite mover binarios a OPFS o filesystem nativo sin tocar el dominio financiero.
+Esto permite mantener `Blob` en IndexedDB como primer adaptador de v0.1. No fija todavía un tamaño máximo de producto ni sustituye pruebas de cuota/memoria en dispositivos físicos.
 
 ### Reproducibilidad de dependencias
 
 **Completada para el entorno actual.**
 
-PR #25 versionó `package-lock.json` generado con Node 22.12.0 y cambió los jobs normales de CI a `npm ci`. El lockfile fija también el árbol transitivo, por lo que la misma revisión ya no depende de resolver versiones compatibles diferentes en cada ejecución.
+PR #25 versionó `package-lock.json` generado con Node 22.12.0 y cambió CI a `npm ci`.
 
 ### Backup externo entre instalaciones
 
 **Formato v1 implementado y validado.**
 
-PR #27 añadió un archivo único `.cashx` con header versionado, manifiesto JSON y comprobantes como bytes binarios crudos. La importación valida SHA-256 del manifiesto, SHA-256 calculado sobre cada comprobante, tamaños, offsets, tipos, IDs únicos y referencias antes de escribir en IndexedDB.
+PR #27 añadió un archivo único `.cashx` con header versionado, manifiesto JSON y comprobantes binarios crudos. La importación valida SHA-256 del manifiesto y comprobantes, tamaños, offsets, tipos, IDs y referencias antes de escribir. La prueba source→archivo→segunda base Dexie confirma restauración repetida idempotente y rechazo de manifiesto/payload corrupto o truncado.
 
-Las pruebas crean una instalación origen con libro, categoría, registro y dos comprobantes —incluido uno en Papelera—, exportan el archivo, lo restauran dos veces en una segunda base Dexie y comprueban integridad de los bytes sin duplicados. También se rechazan manifiesto modificado, payload binario modificado y archivo truncado.
-
-El formato está documentado en `docs/BACKUP.md`. El backup v1 no está cifrado; esa limitación debe comunicarse cuando exista UI de exportación.
+El backup v1 no está cifrado; esa limitación debe comunicarse cuando exista UI de exportación.
 
 ### Transporte Google Drive
 
@@ -94,37 +82,40 @@ El formato está documentado en `docs/BACKUP.md`. El backup v1 no está cifrado;
 
 PR #29 añadió `CloudAuthorizationProvider`, `CloudSyncProvider`, `GoogleDriveHttpClient`, `GoogleDriveCloudSyncProvider` y `GoogleDriveVisibleFileStore` sin nuevas dependencias de producción.
 
-Las pruebas automatizadas demuestran:
+Las pruebas demuestran objetos internos solo en `appDataFolder`, identidad estable con `appProperties`, actualización sin duplicados, descarga, rechazo de duplicados ambiguos, reintentos acotados, timeout/cancelación preparados y jerarquía visible administrada `Mi unidad/Cash-X/Backups|Exportaciones` sin archivos automáticos dispersos en la raíz.
 
-- objetos internos creados exclusivamente bajo `appDataFolder`;
-- búsqueda por identidad estable en `appProperties` y actualización del mismo archivo sin duplicarlo;
-- descarga de bytes;
-- rechazo de identidades remotas duplicadas/ambiguas para evitar sobrescritura silenciosa;
-- timeout/cancelación preparados y reintentos acotados para errores transitorios/rate limit;
-- jerarquía visible administrada `Mi unidad/Cash-X/Backups` y `Mi unidad/Cash-X/Exportaciones`;
-- reutilización de la misma jerarquía en operaciones posteriores, sin crear archivos visibles sueltos en la raíz.
+### Núcleo de conflictos y recuperación offline
 
-La autorización está deliberadamente separada del transporte. No existen client secrets, tokens ni cuentas Google reales en Git. La prueba real requiere configurar OAuth client IDs de prueba para PWA y Android fuera del repositorio. Hasta entonces, Drive está **implementado, pendiente de validación E2E real**.
+**Implementado y validado de forma simulada entre dos instalaciones; Drive/OAuth reales todavía pendientes.**
+
+- PR #31 añadió operaciones versionadas, deduplicación determinista y conflictos explícitos para ediciones concurrentes del mismo objeto desde la misma versión base. Delete/restore usan el mismo modelo y una colisión de `operationId` con contenido distinto se rechaza.
+- PR #33 persistió oplog y conflictos en Dexie. La ingestión es transaccional, idempotente y sobrevive cierre/reapertura.
+- PR #35 añadió `syncQueue` persistente: enqueue idempotente, orden determinista, confirmación parcial, retry/backoff inyectable y reapertura sin perder operaciones pendientes.
+- PR #37 añadió `remoteSyncCursors` y `RemoteSyncPull`: el cursor solo avanza después de aplicar la página completa, un replay ya confirmado es idempotente, páginas fuera de orden se rechazan y una colisión revierte operaciones y cursor.
+- PR #39 integra estos componentes en pruebas de recuperación: confirmaciones parciales/retry sobreviven reinicio; dos bases independientes trabajan offline, hacen push/pull simulado, reinician y convergen al mismo oplog; una edición concurrente queda visible como conflicto en ambos lados; repetir el pull no duplica; una página defectuosa no deja avance falso ni operaciones parciales.
+
+Esta evidencia cierra el riesgo lógico principal de pérdida silenciosa en el motor local/simulado. **No equivale todavía a una prueba E2E con Google Drive real ni a resolución de conflictos por UI.**
 
 ## Pendiente de Checkpoint 3
 
-- configurar OAuth de prueba para PWA y Android/Capacitor fuera del repositorio y validar autorización real;
-- probar dos instalaciones con la misma cuenta Google, offline/reconexión, reintentos e idempotencia;
-- implementar y provocar conflictos concurrentes sin pérdida silenciosa;
+- configurar OAuth de prueba para PWA y Android/Capacitor fuera del repositorio y validar autorización real con scopes mínimos;
+- ejecutar el primer E2E real con la misma cuenta Google: dispositivo A sube a `appDataFolder`, dispositivo B recupera y confirma integridad/idempotencia;
+- repetir offline/reconexión, reintentos y conflicto concurrente contra Drive real;
 - validar desconexión/reconexión de Drive sin perder datos locales;
-- probar recuperación ante fallos más agresivos y límites/cuotas reales en dispositivo;
-- realizar prueba física Android antes de considerar una entrega real.
+- probar límites/cuotas y fallos más agresivos de almacenamiento/red en dispositivo;
+- realizar prueba física Android antes de considerar una entrega real;
+- diseñar posteriormente UX explícita de resolución de conflictos, sin sobrescritura silenciosa.
 
 ## CI
 
 Cash-X tiene CI propio. `main` instala dependencias con `npm ci` y valida typecheck, tests, build web, generación/build Android debug y persistencia real de Dexie/IndexedDB —incluidos comprobantes `Blob`— tras cierre forzado y reapertura en un emulador Android API 35.
 
-Las pruebas de `verify` cubren además el contenedor externo `.cashx`, restauración entre dos bases independientes, idempotencia, detección de corrupción/truncamiento y el transporte Drive simulado con aislamiento de `appDataFolder`, actualización idempotente, reintentos y jerarquía visible ordenada.
+Las pruebas de `verify` cubren además `.cashx`, restauración entre dos bases, integridad/corrupción, transporte Drive simulado, núcleo de conflictos, oplog/conflictos persistentes, cola offline, cursor remoto y recuperación/convergencia simulada entre dos instalaciones después de reinicios y replays.
 
 ## Trabajo paralelo
 
-No hay trabajo paralelo identificado después de integrar PR #29.
+No hay trabajo paralelo identificado después de integrar PR #39.
 
 ## Siguiente paso exacto
 
-**Materializar la autorización Google de prueba fuera del repositorio y ejecutar el primer E2E real: una instalación autoriza Drive, sube un `.cashx`/objeto de sincronización en `appDataFolder` y una segunda instalación con la misma cuenta lo recupera sin backend propio. Después validar offline/reconexión y conflictos. No construir dashboard todavía.**
+**Materializar la autorización Google de prueba fuera del repositorio y ejecutar el primer E2E real: una instalación autoriza Drive, publica datos/objeto de sincronización en `appDataFolder`, una segunda instalación con la misma cuenta los recupera, y luego se repiten offline/reconexión, replay e incompatibilidad concurrente sobre el transporte real. No construir dashboard todavía.**

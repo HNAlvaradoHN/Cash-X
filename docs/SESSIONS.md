@@ -58,6 +58,8 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - TeraBox queda como proveedor futuro solamente si existe API oficial adecuada y una necesidad aprobada.
 - `AttachmentStore` separa los comprobantes del motor concreto de almacenamiento; el primer adaptador usa `Blob` en IndexedDB y puede sustituirse por OPFS/filesystem nativo si las pruebas lo exigen.
 - El backup externo inicial usa un único archivo `.cashx` versionado con manifiesto JSON, bytes binarios crudos e integridad SHA-256. v1 no cifra el contenido.
+- La sincronización no usa “último en escribir gana” silencioso: operaciones concurrentes incompatibles del mismo objeto se conservan como conflicto explícito.
+- El estado de sincronización recuperable se divide en oplog/conflictos persistentes, cola offline de salida y cursor remoto de entrada; todos deben sobrevivir reinicios antes de conectar Drive real.
 
 #### Validaciones técnicas completadas en Checkpoint 3
 
@@ -71,16 +73,22 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - El primer intento del test de comprobantes detectó una incompatibilidad de tipos de TypeScript 7 entre `Uint8Array<ArrayBufferLike>` y `BlobPart`; se corrigió creando el `Blob` desde un `ArrayBuffer` explícito y la validación posterior quedó verde.
 - PR #25 `chore(ci): make dependency installation reproducible`: integrado. Añadió `package-lock.json` y migró CI a `npm ci`.
 - PR #27 `feat(backup): validate external binary backup format`: integrado. Añadió el contenedor `.cashx`, validación SHA-256, prueba source→archivo→segunda instalación, restauración idempotente y rechazo de corrupción/truncamiento sin nuevas dependencias de producción.
-- PR #29 `feat(sync): add ordered Google Drive transport`: integrado al cerrar este tramo. Añadió contratos de autorización/sincronización, cliente REST Drive v3, `GoogleDriveCloudSyncProvider`, almacenamiento visible ordenado, reintentos acotados, timeout/cancelación preparados y tests HTTP simulados para `appDataFolder`, actualización sin duplicados, descarga y jerarquía `Cash-X/Backups|Exportaciones`.
+- PR #29 `feat(sync): add ordered Google Drive transport`: integrado. Añadió contratos de autorización/sincronización, cliente REST Drive v3, `GoogleDriveCloudSyncProvider`, almacenamiento visible ordenado, reintentos acotados, timeout/cancelación preparados y tests HTTP simulados para `appDataFolder`, actualización sin duplicados, descarga y jerarquía `Cash-X/Backups|Exportaciones`.
+- PR #31 `feat(sync): validate deterministic conflict core`: integrado. Añadió operaciones versionadas, deduplicación, fusión de cambios independientes, conflicto explícito concurrente, delete/restore versionados y rechazo de colisiones de identidad.
+- PR #33 `feat(sync): persist operation log and conflict state`: integrado. Persistió oplog/conflictos en Dexie con ingestión transaccional, idempotencia, reapertura y rollback.
+- PR #35 `feat(sync): add persistent offline replay queue`: integrado. Añadió `syncQueue`, orden determinista, confirmación parcial, retry/backoff y persistencia tras reinicio.
+- PR #37 `feat(sync): persist remote pull cursor`: integrado. Añadió `remoteSyncCursors` y pull transaccional: cursor solo avanza tras página completa, replay idempotente, rechazo de páginas fuera de orden y rollback de cursor/operaciones ante colisión.
+- PR #39 `test(sync): validate restart recovery invariants`: integrado al cerrar este tramo. Integra las piezas anteriores en pruebas con dos bases independientes: trabajo offline, push/pull simulado, reinicios, confirmación parcial, retry, replay, convergencia al mismo oplog, conflicto concurrente preservado en ambos lados y fallo de página sin avance falso.
 
 #### Estado actual de la sesión
 
 - Ya existe código técnico Cash-X, aunque todavía no una UI de producto utilizable.
 - Existe CI propio con `npm ci`, typecheck, tests, build web, build Android debug y prueba runtime en emulador.
-- Persistencia estructurada, comprobantes locales, backup externo entre instalaciones de prueba y transporte Drive simulado están validados en el alcance actual.
+- Persistencia estructurada, comprobantes locales, backup externo, transporte Drive simulado y motor local/simulado de sincronización recuperable están validados en el alcance actual.
+- Dos instalaciones simuladas ya demuestran convergencia después de trabajar offline y reiniciar; una edición concurrente incompatible permanece como conflicto explícito en ambos lados en vez de perderse silenciosamente.
 - Google OAuth real todavía no está validado: se requieren client IDs de prueba y consentimiento fuera del repositorio; no se guardarán secretos/tokens reales en Git.
-- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, E2E Drive real, conflictos, validaciones físicas y release.
-- Siguiente paso real: configurar OAuth de prueba fuera del repositorio y demostrar el primer E2E real entre dos instalaciones con la misma cuenta Google, usando `appDataFolder` y sin backend propio.
+- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, E2E Drive real, resolución de conflictos, validaciones físicas y release.
+- Siguiente paso real: configurar OAuth de prueba fuera del repositorio y demostrar el primer E2E real entre dos instalaciones con la misma cuenta Google, usando `appDataFolder` y sin backend propio; después repetir offline/reconexión y conflicto contra Drive real.
 - Estado de la sesión: activa.
 
 ## Regla para la próxima sesión
