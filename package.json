@@ -12,7 +12,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "cap:sync": "cap sync android"
+    "cap:sync": "cap sync android",
+    "android:configure-drive-auth": "node scripts/configure-android-drive-auth.mjs"
   },
   "dependencies": {
     "@capacitor/core": "8.5.2",
