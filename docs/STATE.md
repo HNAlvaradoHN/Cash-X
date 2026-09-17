@@ -18,16 +18,18 @@
 - PR #21 `docs(state): record Android WebView persistence validation`: integrado.
 - PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado.
 - PR #25 `chore(ci): make dependency installation reproducible`: integrado.
-- PR #27 `feat(backup): validate external binary backup format`: integrado al cerrar este checkpoint.
+- PR #27 `feat(backup): validate external binary backup format`: integrado.
+- PR #29 `feat(sync): add ordered Google Drive transport`: integrado al cerrar este tramo.
 - Issue #19 `Checkpoint 3 spike: validate IndexedDB persistence in Android WebView`: cerrado como completado.
 - Issue #22 `Checkpoint 3 spike: validate attachment Blob storage and cleanup`: cerrado como completado por PR #23.
 - Issue #24 `Checkpoint 3: make dependency installation reproducible`: cerrado como completado por PR #25.
 - Issue #26 `Checkpoint 3: validate external backup with binary attachments`: cerrado como completado por PR #27.
+- Issue #28 `Checkpoint 3: implement Google Drive transport behind CloudSyncProvider`: cerrado como completado por PR #29.
 - Issues #12 y #13 fueron creados accidentalmente por tooling y están cerrados como `not_planned`; no contienen trabajo de proyecto.
 
 ## Estado funcional
 
-El contrato funcional está definido en `docs/PRODUCT_SPEC.md`, el modelo técnico en `docs/DOMAIN_MODEL.md`, persistencia/plataforma en `docs/PERSISTENCE.md`, backup externo en `docs/BACKUP.md` y sincronización opcional en `docs/SYNC.md`.
+El contrato funcional está definido en `docs/PRODUCT_SPEC.md`, el modelo técnico en `docs/DOMAIN_MODEL.md`, persistencia/plataforma en `docs/PERSISTENCE.md`, backup externo en `docs/BACKUP.md`, sincronización opcional en `docs/SYNC.md` y transporte Drive en `docs/DRIVE.md`.
 
 Continúan aprobadas las reglas de libros independientes, ingreso/egreso, categorías configurables, campo adicional opcional, dinero exacto, cálculo automático, Papelera 30 días, comprobantes opcionales, reportes detallados posteriores, modo local completo y Google Drive opcional sin backend propio.
 
@@ -86,24 +88,43 @@ Las pruebas crean una instalación origen con libro, categoría, registro y dos 
 
 El formato está documentado en `docs/BACKUP.md`. El backup v1 no está cifrado; esa limitación debe comunicarse cuando exista UI de exportación.
 
+### Transporte Google Drive
+
+**Adaptador REST implementado y validado contra HTTP simulado; OAuth real pendiente.**
+
+PR #29 añadió `CloudAuthorizationProvider`, `CloudSyncProvider`, `GoogleDriveHttpClient`, `GoogleDriveCloudSyncProvider` y `GoogleDriveVisibleFileStore` sin nuevas dependencias de producción.
+
+Las pruebas automatizadas demuestran:
+
+- objetos internos creados exclusivamente bajo `appDataFolder`;
+- búsqueda por identidad estable en `appProperties` y actualización del mismo archivo sin duplicarlo;
+- descarga de bytes;
+- rechazo de identidades remotas duplicadas/ambiguas para evitar sobrescritura silenciosa;
+- timeout/cancelación preparados y reintentos acotados para errores transitorios/rate limit;
+- jerarquía visible administrada `Mi unidad/Cash-X/Backups` y `Mi unidad/Cash-X/Exportaciones`;
+- reutilización de la misma jerarquía en operaciones posteriores, sin crear archivos visibles sueltos en la raíz.
+
+La autorización está deliberadamente separada del transporte. No existen client secrets, tokens ni cuentas Google reales en Git. La prueba real requiere configurar OAuth client IDs de prueba para PWA y Android fuera del repositorio. Hasta entonces, Drive está **implementado, pendiente de validación E2E real**.
+
 ## Pendiente de Checkpoint 3
 
-- implementar y probar Google OAuth/Drive con permisos mínimos;
-- probar dos instalaciones, offline/reconexión, reintentos, idempotencia y conflictos;
-- probar recuperación ante fallos más agresivos y límites/cuotas reales en dispositivo;
+- configurar OAuth de prueba para PWA y Android/Capacitor fuera del repositorio y validar autorización real;
+- probar dos instalaciones con la misma cuenta Google, offline/reconexión, reintentos e idempotencia;
+- implementar y provocar conflictos concurrentes sin pérdida silenciosa;
 - validar desconexión/reconexión de Drive sin perder datos locales;
+- probar recuperación ante fallos más agresivos y límites/cuotas reales en dispositivo;
 - realizar prueba física Android antes de considerar una entrega real.
 
 ## CI
 
 Cash-X tiene CI propio. `main` instala dependencias con `npm ci` y valida typecheck, tests, build web, generación/build Android debug y persistencia real de Dexie/IndexedDB —incluidos comprobantes `Blob`— tras cierre forzado y reapertura en un emulador Android API 35.
 
-Las pruebas de `verify` cubren además el contenedor externo `.cashx`, restauración entre dos bases independientes, idempotencia y detección de corrupción/truncamiento.
+Las pruebas de `verify` cubren además el contenedor externo `.cashx`, restauración entre dos bases independientes, idempotencia, detección de corrupción/truncamiento y el transporte Drive simulado con aislamiento de `appDataFolder`, actualización idempotente, reintentos y jerarquía visible ordenada.
 
 ## Trabajo paralelo
 
-No hay trabajo paralelo identificado después de integrar PR #27.
+No hay trabajo paralelo identificado después de integrar PR #29.
 
 ## Siguiente paso exacto
 
-**Implementar el adaptador mínimo de Google Drive detrás de `CloudSyncProvider`: OAuth con mínimo privilegio, guardar/leer un archivo de prueba en `appDataFolder` y demostrar que una segunda instalación autorizada puede recuperar un backup `.cashx` sin backend propio. No construir dashboard todavía.**
+**Materializar la autorización Google de prueba fuera del repositorio y ejecutar el primer E2E real: una instalación autoriza Drive, sube un `.cashx`/objeto de sincronización en `appDataFolder` y una segunda instalación con la misma cuenta lo recupera sin backend propio. Después validar offline/reconexión y conflictos. No construir dashboard todavía.**

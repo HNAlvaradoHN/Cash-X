@@ -234,3 +234,24 @@
 **Motivo:** disponer de un objeto autocontenido, verificable y eficiente que sirva tanto para backup manual como para transporte futuro por Google Drive, sin acoplar el dominio a Dexie ni a un proveedor cloud.
 
 **Consecuencias:** `CashXBackupFileService` será el límite de aplicación para exportar/restaurar archivos. El adaptador Google Drive podrá tratar `.cashx` como un `Blob` opaco. Una versión futura podrá añadir cifrado manteniendo compatibilidad versionada. Formato detallado: `docs/BACKUP.md`.
+
+## DEC-014 — Google Drive ordenado con almacenamiento interno aislado y una única raíz visible
+
+**Fecha:** 2026-09-16
+
+**Decisión:** Cash-X no dispersará archivos por Google Drive. Los objetos técnicos de sincronización se almacenan exclusivamente en `appDataFolder`. Todo archivo visible creado automáticamente por Cash-X se almacena únicamente bajo una raíz administrada `Mi unidad/Cash-X`, con subcarpetas administradas como `Backups` y `Exportaciones`.
+
+**Detalles:**
+
+- la sincronización interna no crea archivos visibles sueltos en Mi unidad;
+- `Cash-X`, `Backups` y `Exportaciones` usan identidades privadas mediante `appProperties` para poder localizarlas y reutilizarlas;
+- los archivos visibles automáticos siempre reciben como padre una subcarpeta administrada, nunca la raíz de Mi unidad;
+- si Drive devuelve más de una carpeta administrada para el mismo rol, Cash-X detiene la operación en vez de crear una carpeta adicional y empeorar la dispersión;
+- los objetos internos usan una clave estable en `appProperties`; si existe exactamente una copia se actualiza el mismo archivo, y si hay varias copias ambiguas no se sobrescribe ninguna silenciosamente;
+- una ubicación visible fuera de `Mi unidad/Cash-X` solo podrá usarse mediante una futura acción explícita del usuario para guardar/copiar en otra ubicación;
+- se usan los scopes mínimos `drive.appdata` y `drive.file`; no se solicita el scope amplio `drive` para recorrer o administrar todo el almacenamiento del usuario;
+- la autorización OAuth queda separada del transporte mediante `CloudAuthorizationProvider`, por lo que PWA y Android pueden resolver credenciales de plataforma sin acoplar el dominio financiero.
+
+**Motivo:** mantener Google Drive limpio y predecible, limitar permisos y evitar que una función opcional de sincronización contamine el almacenamiento personal del usuario.
+
+**Consecuencias:** `GoogleDriveCloudSyncProvider` maneja objetos internos en `appDataFolder`, mientras `GoogleDriveVisibleFileStore` impone la jerarquía visible. El transporte se prueba sin credenciales reales mediante HTTP simulado; OAuth E2E con una cuenta Google de prueba sigue pendiente fuera del repositorio. Detalles: `docs/DRIVE.md`.

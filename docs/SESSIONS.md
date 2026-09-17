@@ -54,6 +54,7 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - Sin conexión a nube, Cash-X funciona completamente con almacenamiento local.
 - Google Drive será el proveedor cloud opcional inicial mediante Google OAuth; cada dispositivo conserva una copia local y sincroniza cuando Drive está conectado.
 - Se prioriza acceso limitado de Drive (`appDataFolder`/archivos de la aplicación) en lugar de acceso amplio al Drive del usuario.
+- Los datos técnicos de sincronización viven en `appDataFolder`; archivos visibles automáticos viven únicamente bajo `Mi unidad/Cash-X/Backups` o `Mi unidad/Cash-X/Exportaciones`, reutilizando la misma jerarquía y sin dispersarse por la raíz.
 - TeraBox queda como proveedor futuro solamente si existe API oficial adecuada y una necesidad aprobada.
 - `AttachmentStore` separa los comprobantes del motor concreto de almacenamiento; el primer adaptador usa `Blob` en IndexedDB y puede sustituirse por OPFS/filesystem nativo si las pruebas lo exigen.
 - El backup externo inicial usa un único archivo `.cashx` versionado con manifiesto JSON, bytes binarios crudos e integridad SHA-256. v1 no cifra el contenido.
@@ -69,19 +70,21 @@ Este archivo define la numeración oficial de chats de trabajo. No usar memoria 
 - PR #23 `feat(attachments): validate local Blob storage and cleanup`: integrado. Añadió `AttachmentStore`/`DexieAttachmentStore` y validó comprobantes `Blob`, varios adjuntos, integridad de bytes/metadatos, rechazo de huérfanos, rollback de lote, Papelera/restauración, purge y persistencia binaria tras reapertura también en Android WebView emulado.
 - El primer intento del test de comprobantes detectó una incompatibilidad de tipos de TypeScript 7 entre `Uint8Array<ArrayBufferLike>` y `BlobPart`; se corrigió creando el `Blob` desde un `ArrayBuffer` explícito y la validación posterior quedó verde.
 - PR #25 `chore(ci): make dependency installation reproducible`: integrado. Añadió `package-lock.json` y migró CI a `npm ci`.
-- PR #27 `feat(backup): validate external binary backup format`: integrado al cerrar este tramo. Añadió el contenedor `.cashx`, validación SHA-256, prueba source→archivo→segunda instalación, restauración idempotente y rechazo de corrupción/truncamiento sin nuevas dependencias de producción.
+- PR #27 `feat(backup): validate external binary backup format`: integrado. Añadió el contenedor `.cashx`, validación SHA-256, prueba source→archivo→segunda instalación, restauración idempotente y rechazo de corrupción/truncamiento sin nuevas dependencias de producción.
+- PR #29 `feat(sync): add ordered Google Drive transport`: integrado al cerrar este tramo. Añadió contratos de autorización/sincronización, cliente REST Drive v3, `GoogleDriveCloudSyncProvider`, almacenamiento visible ordenado, reintentos acotados, timeout/cancelación preparados y tests HTTP simulados para `appDataFolder`, actualización sin duplicados, descarga y jerarquía `Cash-X/Backups|Exportaciones`.
 
 #### Estado actual de la sesión
 
 - Ya existe código técnico Cash-X, aunque todavía no una UI de producto utilizable.
 - Existe CI propio con `npm ci`, typecheck, tests, build web, build Android debug y prueba runtime en emulador.
-- Persistencia estructurada, comprobantes locales y backup externo entre instalaciones de prueba están validados en el alcance actual.
-- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, sincronización Drive, validaciones físicas y release.
-- Siguiente paso real: implementar el adaptador mínimo de Google Drive con OAuth y permisos mínimos, guardar/leer un `.cashx` en `appDataFolder` y demostrar recuperación desde una segunda instalación autorizada sin backend propio.
+- Persistencia estructurada, comprobantes locales, backup externo entre instalaciones de prueba y transporte Drive simulado están validados en el alcance actual.
+- Google OAuth real todavía no está validado: se requieren client IDs de prueba y consentimiento fuera del repositorio; no se guardarán secretos/tokens reales en Git.
+- La aplicación todavía **no debe usarse con datos financieros reales** porque faltan núcleo financiero completo, UI, E2E Drive real, conflictos, validaciones físicas y release.
+- Siguiente paso real: configurar OAuth de prueba fuera del repositorio y demostrar el primer E2E real entre dos instalaciones con la misma cuenta Google, usando `appDataFolder` y sin backend propio.
 - Estado de la sesión: activa.
 
 ## Regla para la próxima sesión
 
 La próxima sesión solo podrá anunciar `Ing. Cash-X #2 💵` después de verificar este archivo, revisar el estado real del repositorio y registrar #2 en el repositorio.
 
-Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PERSISTENCE.md`, `docs/BACKUP.md`, `docs/SYNC.md` y este archivo sin depender de la conversación anterior.
+Un chat nuevo debe poder reconstruir el estado desde `AGENT_RULES.md`, `docs/STATE.md`, `docs/PRODUCT_SPEC.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PERSISTENCE.md`, `docs/BACKUP.md`, `docs/SYNC.md`, `docs/DRIVE.md` y este archivo sin depender de la conversación anterior.

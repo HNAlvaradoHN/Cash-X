@@ -29,12 +29,13 @@ Ya completado:
 - persistencia real Dexie/IndexedDB validada en Android WebView emulado: escritura, cierre forzado, reapertura e integridad;
 - `AttachmentStore` + `DexieAttachmentStore` con `Blob` validados: varios comprobantes, reapertura, rollback de lote, Papelera/restauración, purge y bytes persistidos también en Android WebView emulado;
 - `package-lock.json` versionado y CI migrado a instalación reproducible con `npm ci`;
-- formato externo `.cashx` v1 validado con manifiesto versionado, bytes binarios crudos, SHA-256, restauración entre dos instalaciones de prueba, idempotencia y detección de corrupción/truncamiento.
+- formato externo `.cashx` v1 validado con manifiesto versionado, bytes binarios crudos, SHA-256, restauración entre dos instalaciones de prueba, idempotencia y detección de corrupción/truncamiento;
+- transporte Google Drive REST detrás de contratos, probado con HTTP simulado: `appDataFolder`, actualización idempotente, descarga, backoff acotado, cancelación/timeout preparados y jerarquía visible `Mi unidad/Cash-X/Backups|Exportaciones` sin archivos automáticos dispersos en la raíz.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. añadir adaptador mínimo Google Drive con OAuth y permisos mínimos;
-2. guardar/leer un backup `.cashx` en `appDataFolder` y recuperarlo desde una segunda instalación autorizada;
+1. configurar fuera del repositorio OAuth client IDs de prueba para PWA y Android/Capacitor y validar autorización real con scopes mínimos;
+2. guardar/leer un backup `.cashx`/objeto de sincronización real en `appDataFolder` y recuperarlo desde una segunda instalación autorizada con la misma cuenta;
 3. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
 4. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
 5. validar desconexión/reconexión de Drive sin perder datos locales;
