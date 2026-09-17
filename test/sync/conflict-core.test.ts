@@ -36,7 +36,7 @@ describe('resolveSyncOperations', () => {
     const result = resolveSyncOperations([second, first]);
     expect(result.accepted).toEqual([]);
     expect(result.conflicts).toHaveLength(1);
-    expect(result.conflicts[0].variants).toEqual([first, second]);
+    expect(result.conflicts[0]?.variants).toEqual([first, second]);
   });
 
   it('does not silently let delete or restore win over a concurrent edit', () => {
@@ -44,7 +44,7 @@ describe('resolveSyncOperations', () => {
     const edit = op({ operationId: 'op-edit', deviceId: 'device-b', action: 'upsert', value: { description: 'edited offline' } });
     const result = resolveSyncOperations([deletion, edit]);
     expect(result.accepted).toEqual([]);
-    expect(result.conflicts[0].variants.map((variant) => variant.action).sort()).toEqual(['delete', 'upsert']);
+    expect(result.conflicts[0]?.variants.map((variant) => variant.action).sort()).toEqual(['delete', 'upsert']);
 
     const restore = op({ operationId: 'op-restore', deviceId: 'device-a', action: 'restore', value: { description: 'restored' } });
     const concurrentEdit = op({ operationId: 'op-new-edit', deviceId: 'device-b', action: 'upsert', value: { description: 'changed' } });
