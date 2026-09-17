@@ -2,7 +2,7 @@
 
 **Fecha de decisión:** 2026-09-16  
 **Sesión:** Cash-X #1  
-**Estado:** arquitectura y transporte Drive implementados; OAuth real y E2E multi-dispositivo pendientes
+**Estado:** arquitectura, transporte Drive y motor local/simulado de conflictos/recuperación implementados; OAuth real y E2E Drive multi-dispositivo pendientes
 
 ## Objetivo
 
@@ -41,7 +41,7 @@ La experiencia inicial será equivalente a:
 
 `Configuración -> Sincronización -> Conectar Google Drive`
 
-Google realizará selección/autenticación de la cuenta y consentimiento OAuth. Cash-X podrá mostrar localmente la cuenta conectada, por ejemplo `usuario@gmail.com`, pero no necesita guardar una cuenta de usuario en un servidor propio.
+Google realizará selección/autenticación de la cuenta y consentimiento OAuth. Cash-X podrá mostrar localmente la cuenta conectada, pero no necesita guardar una cuenta de usuario en un servidor propio.
 
 En otro teléfono, tablet o PC, el usuario conecta la misma cuenta de Google y Cash-X encuentra el espacio de sincronización de esa cuenta.
 
@@ -50,8 +50,6 @@ En otro teléfono, tablet o PC, el usuario conecta la misma cuenta de Google y C
 Enviar un PIN por correo requiere que algún servicio confiable genere, almacene temporalmente y entregue ese código. Sin backend, proveedor de correo o servicio de autenticación no existe un emisor seguro que pueda hacerlo.
 
 Por eso v0.1 no construirá un sistema ficticio de correo/PIN. Google ya autentica la cuenta que autoriza Drive y cumple esa función sin introducir infraestructura propia de Cash-X.
-
-Un código o QR de emparejamiento entre dispositivos puede evaluarse más adelante para transferir claves o simplificar vinculación, pero no sustituye por sí solo el almacenamiento/sincronización remota.
 
 ## Permisos de Google Drive
 
@@ -94,48 +92,51 @@ Flujo:
 
 La sincronización nunca debe modificar directamente componentes de UI ni saltarse las validaciones del dominio.
 
-El primer transporte ya implementado separa:
+El transporte implementado separa:
 
 - `CloudAuthorizationProvider`: entrega un access token sin acoplar el transporte a una estrategia OAuth concreta;
 - `GoogleDriveHttpClient`: REST Drive v3, timeout, cancelación y reintentos acotados;
 - `GoogleDriveCloudSyncProvider`: objetos internos en `appDataFolder`;
 - `GoogleDriveVisibleFileStore`: archivos visibles restringidos a la jerarquía `Cash-X`.
 
+El motor local/simulado ya separa además:
+
+- `VersionedSyncOperation` + `resolveSyncOperations`: identidad, versiones base, deduplicación y detección determinista de conflicto;
+- `PersistentSyncState`: oplog y conflictos persistentes en Dexie;
+- `OfflineSyncQueue`: cola de salida persistente con confirmación parcial y retry/backoff;
+- `RemoteSyncPull`: cursor remoto persistente y aplicación transaccional de páginas.
+
 ## Cambios, idempotencia y orden
 
 Cada instalación tendrá un `deviceId` estable y cada cambio sincronizable tendrá un identificador único.
 
-El protocolo debe soportar como mínimo:
+El protocolo soporta conceptualmente creación, edición, Papelera, restauración, eliminación definitiva, categorías/campo adicional, configuración, metadatos y comprobantes. La conexión de todas esas entidades al oplog se hará cuando avance el núcleo financiero/productivo.
 
-- creación;
-- edición;
-- envío a Papelera;
-- restauración;
-- eliminación definitiva cuando corresponda;
-- categorías y campo adicional;
-- configuración sincronizable;
-- metadatos y comprobantes.
+Los cambios se aplican idempotentemente: recibir el mismo cambio dos veces no puede duplicar ingresos, egresos ni comprobantes.
 
-Los cambios se aplicarán de forma idempotente: recibir el mismo cambio dos veces no puede duplicar ingresos, egresos ni comprobantes.
+El transporte Drive usa claves estables en `appProperties`: si una clave existe exactamente una vez, se actualiza el mismo archivo; si aparecen múltiples archivos para la misma identidad, se rechaza el estado ambiguo en vez de sobrescribir silenciosamente.
 
-El transporte Drive ya usa claves estables en `appProperties`: si una clave existe exactamente una vez, se actualiza el mismo archivo; si aparecen múltiples archivos para la misma identidad, se rechaza el estado ambiguo en vez de sobrescribir silenciosamente.
+La cola offline conserva orden determinista, confirmación parcial y estado de retry a través de cierre/reapertura. Las operaciones confirmadas no reaparecen como pendientes.
 
-El motor completo usará lotes/versiones de cambios y snapshots periódicos para evitar subir la base completa por cada modificación y permitir recuperación determinista.
+El pull remoto persiste un cursor por origen. El cursor solo avanza tras ingerir por completo la página; un fallo transaccional deja intactos cursor, oplog y conflictos. Repetir una página ya confirmada es idempotente y una página fuera de orden se rechaza.
 
 ## Conflictos entre dispositivos
 
 Cash-X no sobrescribirá silenciosamente dos ediciones concurrentes del mismo registro financiero.
 
-Regla:
+Regla implementada en el núcleo:
 
-- cambios independientes se fusionan automáticamente;
-- si dos dispositivos modifican el mismo registro desde una misma versión base antes de sincronizar, se conservan ambas versiones y se marca un conflicto;
-- el usuario podrá elegir cuál conservar o revisar las diferencias;
-- borrar/restaurar también se representa como una operación versionada para evitar que un dispositivo resucite o elimine datos por accidente.
+- cambios independientes se conservan sin conflicto;
+- si dos dispositivos modifican el mismo objeto desde una misma versión base antes de sincronizar, se conservan ambas operaciones y se persiste un conflicto;
+- borrar/restaurar también se representa como una operación versionada;
+- una colisión de `operationId` con contenido diferente se rechaza y revierte la transacción;
+- la resolución es determinista independientemente del orden de entrega.
 
 La integridad financiera tiene prioridad sobre una sincronización aparentemente simple que pueda perder información.
 
-El motor de conflicto todavía está pendiente; PR #29 valida el transporte, no la convergencia multi-dispositivo completa.
+PR #31 añadió el núcleo de conflicto; PR #33 lo hizo persistente; PR #35 añadió replay offline; PR #37 añadió pull/cursor transaccional; PR #39 valida la interacción de esas piezas entre dos bases simuladas con reinicios, replays y conflicto concurrente.
+
+La **detección/preservación** del conflicto está validada; la UX para que el usuario elija o reconcilie versiones todavía no está implementada.
 
 ## Comprobantes
 
@@ -152,11 +153,11 @@ El contenedor `.cashx` v1 ya transporta datos estructurados y comprobantes con S
 En v0.1 se intentará sincronizar:
 
 - al abrir la aplicación si existe conexión y autorización válida;
-- después de cambios locales, con agrupación/debounce para no hacer una llamada por cada pulsación;
+- después de cambios locales, con agrupación/debounce;
 - al recuperar conectividad;
 - cuando el usuario pulse `Sincronizar ahora`.
 
-La PWA sin backend no prometerá sincronización continua mientras el navegador esté completamente cerrado. El modelo de autorización web de Google tampoco debe depender de refresh tokens guardados inseguramente en JavaScript. Si Google requiere renovar autorización, Cash-X mostrará una acción clara para reconectar Drive sin afectar los datos locales.
+La PWA sin backend no prometerá sincronización continua mientras el navegador esté completamente cerrado. Si Google requiere renovar autorización, Cash-X mostrará una acción clara para reconectar Drive sin afectar los datos locales.
 
 Android podrá aprovechar capacidades nativas de autenticación/almacenamiento seguro, pero el dominio y el protocolo de sincronización serán los mismos.
 
@@ -170,6 +171,8 @@ El transporte Drive implementado:
 - tiene timeout por solicitud;
 - acepta cancelación externa mediante `AbortSignal`;
 - no reintenta indefinidamente errores de autorización o validación.
+
+El motor local persiste el estado necesario para reanudar push/pull después de reinicios sin asumir que una operación incompleta quedó confirmada.
 
 Las cuotas y condiciones reales todavía deben medirse con una cuenta de prueba y dispositivos reales antes de considerar el checkpoint cerrado.
 
@@ -186,7 +189,7 @@ Desconectar Drive:
 
 Google Drive será el único proveedor cloud implementado inicialmente.
 
-TeraBox no se incluirá en la primera implementación. La arquitectura `CloudSyncProvider` permitirá evaluar un adaptador TeraBox en el futuro si su API oficial, OAuth, estabilidad, políticas, costos y capacidades cumplen los requisitos de Cash-X sin comprometer integridad ni mantenimiento.
+TeraBox no se incluirá en la primera implementación. La arquitectura `CloudSyncProvider` permitirá evaluar un adaptador futuro solo si su API oficial, OAuth, estabilidad, políticas, costos y capacidades cumplen los requisitos de Cash-X.
 
 No se usarán endpoints no oficiales o ingeniería inversa como base de almacenamiento financiero.
 
@@ -194,9 +197,7 @@ No se usarán endpoints no oficiales o ingeniería inversa como base de almacena
 
 La sincronización debe minimizar llamadas, agrupar cambios y aplicar backoff ante límites de API.
 
-Al momento de esta decisión, el uso estándar de Google Drive API está disponible sin costo adicional dentro de sus cuotas estándar, aunque Google anunció un modelo en el que superar umbrales podrá generar cargos más adelante en 2026. Cash-X no habilitará cuotas pagadas ni una configuración con cargos sin aprobación explícita del propietario.
-
-Los archivos ocupan el almacenamiento de la cuenta de Google Drive del usuario.
+Antes de habilitar cualquier configuración que pueda generar cargos se verificarán precios/cuotas vigentes y se requerirá aprobación explícita del propietario. Los archivos ocupan el almacenamiento de la cuenta de Google Drive del usuario.
 
 ## Seguridad
 
@@ -220,24 +221,33 @@ PR #29 valida con HTTP simulado:
 - creación y reutilización de `Mi unidad/Cash-X/Backups`;
 - ausencia de archivos visibles automáticos sueltos en la raíz.
 
+PRs #31, #33, #35, #37 y #39 validan el motor local/simulado:
+
+- operaciones/versiones deterministas y conflictos explícitos;
+- oplog/conflictos persistentes con rollback;
+- cola offline persistente, confirmación parcial y retry;
+- cursor remoto y pull transaccional;
+- dos instalaciones independientes que trabajan offline, reinician, intercambian operaciones y convergen al mismo oplog;
+- replay sin duplicados;
+- conflicto concurrente preservado en ambos lados;
+- fallo de página sin avance falso del cursor ni escritura parcial.
+
 El CI general mantiene typecheck, tests, build web, APK debug y probe Android verdes.
 
 ## Validación obligatoria todavía pendiente antes de considerarlo listo
 
 - autorización Google real desde PWA;
 - autorización Google real desde Android/Capacitor;
-- crear datos en un dispositivo y recibirlos en otro con la misma cuenta;
-- trabajo offline en ambos dispositivos y posterior convergencia;
-- cambios simultáneos independientes;
+- crear datos en un dispositivo y recibirlos en otro con la misma cuenta a través de Drive real;
+- repetir offline/reconexión, reintentos e idempotencia contra Drive real;
 - conflicto real sobre el mismo registro sin pérdida silenciosa;
-- Papelera/restauración entre dispositivos;
-- comprobantes con hash, descarga y cleanup;
-- interrupción de red en mitad de una sincronización;
-- reintentos idempotentes con Drive real;
+- Papelera/restauración entre dispositivos sobre transporte real;
+- comprobantes con hash, descarga y cleanup remotos;
+- interrupción de red en mitad de una sincronización real;
 - desconectar/reconectar Drive sin perder datos locales;
-- backup/restauración manual como fallback;
 - límites y errores de cuota sin reintentos infinitos;
-- prueba física Android antes de release.
+- prueba física Android antes de release;
+- UX de resolución de conflictos antes de exponer la función final al usuario.
 
 ## Referencias externas verificadas
 
@@ -247,4 +257,3 @@ El CI general mantiene typecheck, tests, build web, APK debug y probe Android ve
 - Google Drive API limits/pricing: https://developers.google.com/workspace/drive/api/guides/limits
 - Búsqueda y `appProperties`: https://developers.google.com/workspace/drive/api/guides/search-files
 - Límites de propiedades personalizadas: https://developers.google.com/workspace/drive/api/guides/properties
-- TeraBox integrations (para evaluación futura): https://www.terabox.com/integrations/docs?lang=en

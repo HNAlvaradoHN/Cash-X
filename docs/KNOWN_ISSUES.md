@@ -10,8 +10,8 @@
 
 ## KI-002 — CI de Cash-X
 
-- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23, PR #25, PR #27 y PR #29.
-- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque. Las pruebas cubren también archivo externo `.cashx`, restauración entre dos bases, idempotencia, corrupción/truncamiento y transporte Google Drive simulado con jerarquía visible ordenada.
+- Estado: resuelto en PR #14 y ampliado en PR #17, #20, #23, #25, #27, #29, #31, #33, #35, #37 y #39.
+- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque. Las pruebas cubren también `.cashx`, restauración entre dos bases, integridad/corrupción, transporte Google Drive simulado, conflictos deterministas, oplog/conflictos persistentes, cola offline, cursor remoto y recuperación/convergencia simulada entre dos instalaciones tras reinicios y replay.
 
 ## KI-003 — Nombres de ramas legacy todavía visibles
 
@@ -57,9 +57,18 @@
 ## KI-009 — Google Drive: autorización y E2E reales pendientes
 
 - Estado: transporte implementado por PR #29 contra HTTP simulado; OAuth real pendiente de validación.
-- Ya cubierto: `drive.appdata`, `drive.file`, create/list/read/update, identidad por `appProperties`, rechazo de duplicados ambiguos, retry/backoff acotado, timeout/cancelación preparados y archivos visibles restringidos a `Mi unidad/Cash-X/Backups|Exportaciones`.
-- Pendiente: configurar OAuth client IDs de prueba fuera del repositorio, validar PWA y Android/Capacitor con una cuenta Google real, probar dos instalaciones, offline/reconexión, conflictos y límites/cuotas reales.
+- Ya cubierto en transporte: `drive.appdata`, `drive.file`, create/list/read/update, identidad por `appProperties`, rechazo de duplicados ambiguos, retry/backoff acotado, timeout/cancelación preparados y archivos visibles restringidos a `Mi unidad/Cash-X/Backups|Exportaciones`.
+- Ya cubierto en motor local/simulado por PRs #31/#33/#35/#37/#39: conflictos deterministas sin sobrescritura silenciosa, oplog/conflictos persistentes, cola offline con confirmación parcial/retry, cursor remoto transaccional, replay idempotente y convergencia simulada de dos instalaciones tras reinicios.
+- Pendiente real: configurar OAuth client IDs de prueba fuera del repositorio; validar PWA y Android/Capacitor con una cuenta Google real; repetir los escenarios de dos instalaciones/offline/reconexión/conflictos contra Drive real; medir límites/cuotas y hacer prueba física Android.
 - Restricción: no introducir backend propio, Supabase, Firebase o Cloudflare para resolver esta parte.
+
+## KI-010 — Resolución de conflictos aún no tiene UX
+
+- Estado: detección y preservación técnica validadas; resolución final todavía pendiente.
+- Evidencia: dos ediciones concurrentes desde la misma versión base se conservan como variantes y el conflicto persiste/reaparece después de reinicio.
+- Impacto: la sincronización final no debe exponer una política silenciosa de “último en escribir gana”.
+- Pendiente: definir caso de uso/UX explícita para revisar y resolver variantes antes de habilitar sincronización multi-dispositivo como función terminada.
+- Prioridad: alta antes de UI final de sincronización.
 
 ## Nota de seguridad sobre historial anterior
 

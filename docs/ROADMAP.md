@@ -30,21 +30,27 @@ Ya completado:
 - `AttachmentStore` + `DexieAttachmentStore` con `Blob` validados: varios comprobantes, reapertura, rollback de lote, Papelera/restauración, purge y bytes persistidos también en Android WebView emulado;
 - `package-lock.json` versionado y CI migrado a instalación reproducible con `npm ci`;
 - formato externo `.cashx` v1 validado con manifiesto versionado, bytes binarios crudos, SHA-256, restauración entre dos instalaciones de prueba, idempotencia y detección de corrupción/truncamiento;
-- transporte Google Drive REST detrás de contratos, probado con HTTP simulado: `appDataFolder`, actualización idempotente, descarga, backoff acotado, cancelación/timeout preparados y jerarquía visible `Mi unidad/Cash-X/Backups|Exportaciones` sin archivos automáticos dispersos en la raíz.
+- transporte Google Drive REST detrás de contratos, probado con HTTP simulado: `appDataFolder`, actualización idempotente, descarga, backoff acotado, cancelación/timeout preparados y jerarquía visible `Mi unidad/Cash-X/Backups|Exportaciones` sin archivos automáticos dispersos en la raíz;
+- núcleo determinista de operaciones/conflictos multi-dispositivo: deduplicación, cambios independientes, conflicto explícito para ediciones concurrentes y delete/restore versionados;
+- oplog y conflictos persistentes en Dexie con reapertura, idempotencia y rollback;
+- cola offline persistente con confirmación parcial, retry/backoff y orden determinista;
+- cursor remoto persistente y pull transaccional: replay idempotente, rechazo de páginas fuera de orden y rollback sin avance falso;
+- E2E simulado de recuperación entre dos instalaciones: trabajo offline, push/pull, reinicios, replay, convergencia al mismo oplog y conflicto concurrente preservado en ambos lados.
 
 Siguiente trabajo dentro del checkpoint:
 
 1. configurar fuera del repositorio OAuth client IDs de prueba para PWA y Android/Capacitor y validar autorización real con scopes mínimos;
-2. guardar/leer un backup `.cashx`/objeto de sincronización real en `appDataFolder` y recuperarlo desde una segunda instalación autorizada con la misma cuenta;
-3. validar dos instalaciones, trabajo offline, reconexión, reintentos e idempotencia;
-4. provocar conflicto concurrente y demostrar ausencia de pérdida silenciosa;
+2. guardar/leer un objeto de sincronización o backup `.cashx` real en `appDataFolder` y recuperarlo desde una segunda instalación autorizada con la misma cuenta;
+3. repetir contra Drive real los escenarios ya validados localmente: offline/reconexión, confirmación parcial, retry, replay e idempotencia;
+4. provocar conflicto concurrente real entre dos instalaciones y demostrar ausencia de pérdida silenciosa;
 5. validar desconexión/reconexión de Drive sin perder datos locales;
-6. probar límites/cuotas y fallos agresivos de almacenamiento en dispositivo;
+6. probar límites/cuotas y fallos agresivos de almacenamiento/red en dispositivo;
 7. realizar una prueba física Android antes de una entrega real;
 8. cuando el spike completo pase, implementar núcleo financiero independiente de UI;
-9. añadir pruebas del dominio financiero.
+9. añadir pruebas del dominio financiero;
+10. diseñar la UX de resolución de conflictos antes de exponer sincronización multi-dispositivo al usuario.
 
-La UI final no se construye hasta cerrar las validaciones de persistencia necesarias.
+La UI final no se construye hasta cerrar las validaciones de persistencia/sincronización necesarias.
 
 ## Checkpoint 4 — Interfaz base
 
