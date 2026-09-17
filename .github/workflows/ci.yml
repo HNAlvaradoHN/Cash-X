@@ -77,47 +77,6 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-      - name: Validate Google authorization compile spike
-        run: |
-          set -euo pipefail
-          APP_GRADLE="android/app/build.gradle"
-          PROBE_DIR="android/app/src/main/java/com/cashx/app"
-          PROBE_JAVA="$PROBE_DIR/GoogleDriveAuthorizationCompileProbe.java"
-          BASE_APK="android/app/build/outputs/apk/debug/app-debug.apk"
-          cp "$APP_GRADLE" /tmp/cashx-app-build.gradle
-          baseline_bytes="$(stat -c%s "$BASE_APK")"
-
-          python3 - <<'PY'
-          from pathlib import Path
-
-          path = Path('android/app/build.gradle')
-          source = path.read_text(encoding='utf-8')
-          marker = 'dependencies {'
-          if source.count(marker) != 1:
-              raise SystemExit(f'Expected exactly one dependencies block, found {source.count(marker)}')
-          dependency = "    implementation 'com.google.android.gms:play-services-auth:22.0.0'\n"
-          if dependency.strip() in source:
-              raise SystemExit('Authorization probe dependency already present before spike injection')
-          path.write_text(source.replace(marker, marker + '\n' + dependency, 1), encoding='utf-8')
-          PY
-
-          mkdir -p "$PROBE_DIR"
-          cp test/android/GoogleDriveAuthorizationCompileProbe.java "$PROBE_JAVA"
-          cd android
-          ./gradlew --no-daemon assembleDebug
-          cd ..
-
-          probe_bytes="$(stat -c%s "$BASE_APK")"
-          delta_bytes="$((probe_bytes - baseline_bytes))"
-          echo "CASHX_AUTH_PROBE_BASE_APK_BYTES=$baseline_bytes"
-          echo "CASHX_AUTH_PROBE_APK_BYTES=$probe_bytes"
-          echo "CASHX_AUTH_PROBE_DELTA_BYTES=$delta_bytes"
-          echo "CASHX_AUTH_PROBE_COMPILE_OK"
-
-          cp /tmp/cashx-app-build.gradle "$APP_GRADLE"
-          rm -f "$PROBE_JAVA"
-          rm -rf android/app/build
-
       - name: Build Android persistence probe
         run: |
           python3 - <<'PY'
