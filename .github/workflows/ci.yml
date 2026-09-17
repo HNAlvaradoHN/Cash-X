@@ -65,6 +65,9 @@ jobs:
       - name: Sync Android project
         run: npx cap sync android
 
+      - name: Configure Android Drive authorization bridge
+        run: npm run android:configure-drive-auth
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew --no-daemon assembleDebug
@@ -92,6 +95,7 @@ jobs:
           PY
           npm run build
           npx cap sync android
+          npm run android:configure-drive-auth
           cd android
           ./gradlew --no-daemon assembleDebug
 
