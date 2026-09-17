@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core';
+
 import type {
   AttachmentRow,
   BookRow,
@@ -15,6 +17,7 @@ const PROBE_INITIAL_BALANCE_MINOR = 12_345;
 const PROBE_CATEGORY_ID = 'android-webview-probe-category';
 const PROBE_RECORD_ID = 'android-webview-probe-record';
 const PROBE_ATTACHMENT_ID = 'android-webview-probe-attachment';
+const DRIVE_AUTH_PLUGIN_NAME = 'CashXGoogleDriveAuthorization';
 const PROBE_ATTACHMENT_BYTES = new Uint8Array([0x43, 0x41, 0x53, 0x48, 0x2d, 0x58, 0x00, 0xff]);
 
 function publish(status: string): void {
@@ -27,6 +30,12 @@ function publish(status: string): void {
   }
 
   document.body.textContent = status;
+}
+
+function assertDriveAuthorizationBridge(): void {
+  if (!Capacitor.isPluginAvailable(DRIVE_AUTH_PLUGIN_NAME)) {
+    throw new Error('Android Google Drive authorization bridge is not registered.');
+  }
 }
 
 function assertPersistedBook(book: BookRow): void {
@@ -125,6 +134,7 @@ async function seedProbeData(
 }
 
 async function runProbe(): Promise<void> {
+  assertDriveAuthorizationBridge();
   const db = new CashXDatabase(PROBE_DATABASE_NAME);
 
   try {
