@@ -10,8 +10,8 @@
 
 ## KI-002 — CI de Cash-X
 
-- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23, PR #25 y PR #27.
-- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque. Las pruebas cubren también archivo externo `.cashx`, restauración entre dos bases, idempotencia y corrupción/truncamiento.
+- Estado: resuelto en PR #14 y ampliado en PR #17, PR #20, PR #23, PR #25, PR #27 y PR #29.
+- Resultado: CI usa `npm ci` con `package-lock.json` versionado y ejecuta typecheck, tests, build web, build Android debug y prueba de persistencia Dexie/IndexedDB tras cierre/reapertura en Android emulado; el probe incluye un comprobante `Blob` y valida sus bytes después del segundo arranque. Las pruebas cubren también archivo externo `.cashx`, restauración entre dos bases, idempotencia, corrupción/truncamiento y transporte Google Drive simulado con jerarquía visible ordenada.
 
 ## KI-003 — Nombres de ramas legacy todavía visibles
 
@@ -54,10 +54,11 @@
 - Prioridad: evaluar antes de release si el modelo de amenaza o distribución lo exige.
 - Estado: abierto/documentado, no bloquea el spike de sincronización.
 
-## KI-009 — Google Drive todavía no implementado
+## KI-009 — Google Drive: autorización y E2E reales pendientes
 
-- Estado: abierto; siguiente paso exacto de Checkpoint 3.
-- Alcance pendiente: OAuth con mínimo privilegio, `appDataFolder`, transporte de `.cashx`, dos instalaciones, reintentos, offline/reconexión y conflictos.
+- Estado: transporte implementado por PR #29 contra HTTP simulado; OAuth real pendiente de validación.
+- Ya cubierto: `drive.appdata`, `drive.file`, create/list/read/update, identidad por `appProperties`, rechazo de duplicados ambiguos, retry/backoff acotado, timeout/cancelación preparados y archivos visibles restringidos a `Mi unidad/Cash-X/Backups|Exportaciones`.
+- Pendiente: configurar OAuth client IDs de prueba fuera del repositorio, validar PWA y Android/Capacitor con una cuenta Google real, probar dos instalaciones, offline/reconexión, conflictos y límites/cuotas reales.
 - Restricción: no introducir backend propio, Supabase, Firebase o Cloudflare para resolver esta parte.
 
 ## Nota de seguridad sobre historial anterior
