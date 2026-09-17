@@ -65,10 +65,12 @@ export function resolveSyncOperations<T>(operations: VersionedSyncOperation<T>[]
       const devices = new Set(siblings.map((operation) => operation.deviceId));
       if (siblings.length > 1 && devices.size > 1) {
         const variants = [...siblings].sort(operationOrder);
+        const firstVariant = variants[0];
+        if (!firstVariant) continue;
         conflicts.push({
-          entityKind: variants[0].entityKind,
-          entityId: variants[0].entityId,
-          baseVersion: variants[0].baseVersion,
+          entityKind: firstVariant.entityKind,
+          entityId: firstVariant.entityId,
+          baseVersion: firstVariant.baseVersion,
           variants,
         });
         conflicted = true;
