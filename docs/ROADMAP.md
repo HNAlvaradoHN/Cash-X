@@ -34,11 +34,12 @@ Ya completado:
 - cola offline persistente con confirmación parcial y retry/backoff;
 - cursor remoto persistente y pull transaccional con replay idempotente/rollback;
 - E2E simulado de dos instalaciones con reinicios, convergencia y conflicto preservado;
-- `CloudSyncEngine` sobre `CloudSyncProvider`: snapshots remotos por dispositivo, publicación monotónica, confirmación solo después de `put`, cursor SHA-256, replay y rollback ante contenido remoto inválido.
+- `CloudSyncEngine` sobre `CloudSyncProvider`: snapshots remotos por dispositivo, publicación monotónica, confirmación solo después de `put`, cursor SHA-256, replay y rollback ante contenido remoto inválido;
+- spike Android de `play-services-auth:22.0.0`: `AuthorizationClient` + `AuthorizationRequest` + `Scopes.DRIVE_APPFOLDER` compilan con el stack actual; APK debug temporal aumentó ~3.50 MiB y la dependencia fue retirada del APK normal al cerrar la evidencia.
 
 Siguiente trabajo dentro del checkpoint:
 
-1. validar en un spike aislado la dependencia Android `com.google.android.gms:play-services-auth:22.0.0` y preparar un bridge Capacitor/nativo para `AuthorizationClient` detrás de `CloudAuthorizationProvider`;
+1. implementar un bridge Android pequeño para `AuthorizationClient` detrás de `CloudAuthorizationProvider`, encapsulando `play-services-auth` en la capa de plataforma y sin `requestOfflineAccess`;
 2. configurar fuera del repositorio el cliente OAuth Android de prueba (`com.cashx.app` + firma de prueba) y solicitar únicamente `drive.appdata` para el primer E2E;
 3. ejecutar `Android A -> appDataFolder -> Android B` con la misma cuenta, verificando push/pull real e integridad;
 4. repetir offline/reconexión, retry/replay e incompatibilidad concurrente sobre Drive real;
